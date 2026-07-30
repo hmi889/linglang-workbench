@@ -197,9 +197,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue"
 .store-tab.active.done{background:var(--primary);color:#fff}
 .store-all-badge{font-size:11px;padding:2px 6px;border-radius:6px;margin-left:4px}
 /* 店铺管理 */
-.store-mgmt-card{background:#fafaf3;border-radius:12px;padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.store-mgmt-card{background:#fafaf3;border-radius:12px;padding:10px 14px;margin-bottom:6px;display:flex;flex-direction:column;gap:6px}
+.store-mgmt-row1{display:flex;align-items:center;gap:10px}
 .store-mgmt-name{font-size:14px;font-weight:500;flex:1}
-.store-op-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.store-op-chips{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
 .store-op-chip{font-size:11px;padding:2px 8px;border-radius:6px;background:#dbeafe;color:#1e40af}
 .store-op-chip.remove{background:#fee2e2;color:#991b1b;cursor:pointer}
 
@@ -742,6 +743,9 @@ async function loadSettingsData(){
   const stList=$('#storeMgmtList');
   stList.innerHTML='';
   const ops=allOps||[];
+  if(storesCache.length===0){
+    stList.innerHTML='<div style="font-size:13px;color:var(--muted);padding:8px 0">暂无店铺，点击上方按钮添加</div>';
+  }
   storesCache.forEach(st=>{
     const assignedOps=storeOpsCache.filter(so=>so.store_id===st.id);
     const opChips=assignedOps.map(so=>{
@@ -750,18 +754,23 @@ async function loadSettingsData(){
       return `<span class="store-op-chip remove" onclick="removeOpFromStore('${st.id}','${so.operator_id}')">${esc(opName)} ✕</span>`;
     }).join('');
     const unassignedOps=ops.filter(o=>!assignedOps.some(so=>so.operator_id===o.id));
-    const addBtn=unassignedOps.length>0
-      ?`<select onchange="if(this.value)assignOpToStore('${st.id}',this.value);this.value=''" style="font-size:12px;border-radius:8px;border:1px solid var(--border);padding:2px 8px;background:var(--pale)">
+    let assignArea='';
+    if(unassignedOps.length>0){
+      assignArea=`<select onchange="if(this.value)assignOpToStore('${st.id}',this.value);this.value=''" style="font-size:12px;border-radius:8px;border:1px solid var(--border);padding:3px 8px;background:var(--pale);cursor:pointer">
         <option value="">+ 分配运营</option>
         ${unassignedOps.map(o=>`<option value="${o.id}">${esc(o.display_name||o.id.slice(0,8))}</option>`).join('')}
-      </select>`
-      :'';
+      </select>`;
+    }else if(ops.length===0){
+      assignArea='<span style="font-size:11px;color:var(--muted)">暂无运营账号，请先注册运营</span>';
+    }else{
+      assignArea='<span style="font-size:11px;color:var(--muted)">所有运营已分配</span>';
+    }
     stList.innerHTML+=`<div class="store-mgmt-card">
-      <div class="store-mgmt-name">🏪 ${esc(st.name)}</div>
-      <button class="btn btn-sm btn-r" onclick="removeStore('${st.id}')">✕</button>
-      <div style="width:100%">
-        <div class="store-op-chips">${opChips}${addBtn}</div>
+      <div class="store-mgmt-row1">
+        <span class="store-mgmt-name">🏪 ${esc(st.name)}</span>
+        <button class="btn btn-sm btn-r" onclick="removeStore('${st.id}')">✕</button>
       </div>
+      <div class="store-op-chips">${opChips}${assignArea}</div>
     </div>`;
   });
 }
