@@ -1559,6 +1559,15 @@ async function saveText(modId){
 // ========== 启动流程 ==========
 sb?.auth.onAuthStateChange(async(event,session)=>{
   if(session?.user){
+    // 向服务器验证 token 是否仍然有效（用户可能已在 Dashboard 被删除）
+    const {data:uData,error:uErr}=await sb.auth.getUser();
+    if(uErr||!uData?.user){
+      await sb.auth.signOut();
+      currentUser=null;
+      $('#loginPage').style.display='flex';
+      $('#mainApp').style.display='none';
+      return;
+    }
     currentUser=session.user;
     await loadProfile();
     enterApp();
@@ -1574,7 +1583,16 @@ sb?.auth.onAuthStateChange(async(event,session)=>{
   if(!sb) return;
   const {data:{session}}=await sb.auth.getSession();
   if(session?.user){
-    currentUser=session.user;
+    // 向服务器验证 token 是否仍然有效（用户可能已在 Dashboard 被删除）
+    const {data:uData,error:uErr}=await sb.auth.getUser();
+    if(uErr||!uData?.user){
+      // token 无效 → 清除旧 session，显示登录页
+      await sb.auth.signOut();
+      $('#loginPage').style.display='flex';
+      $('#mainApp').style.display='none';
+      return;
+    }
+    currentUser=uData.user;
     await loadProfile();
     enterApp();
   }
