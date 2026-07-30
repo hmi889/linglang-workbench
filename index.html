@@ -356,10 +356,10 @@ async function loadModules(){
   const {data}=await sb.from('modules').select('*').order('sort_order');
   modulesCache=data||[];
   if(!activeModId) activeModId=modulesCache.find(m=>m.name==='运营每日工作')?.id||modulesCache[0]?.id||'';
+  // 先初始化种子条目，再渲染（确保条目存在后再显示）
+  await initModuleItems();
   renderSidebar();
   renderContent();
-  // 初始化种子条目
-  await initModuleItems();
 }
 
 // ========== 种子条目初始化（核心逻辑） ==========
@@ -370,73 +370,56 @@ async function initModuleItems(){
     const rule=mod.module_rule||'normal';
     const seedStr=mod.seed_content;
     const seeds=seedStr?JSON.parse(seedStr):[];
+    console.log(`[init] "${mod.name}" rule=${rule} seeds=${seeds.length} seedStr=${seedStr?'有':'空'}`);
 
+    try{
     if(rule==='daily'){
-      // 每日工作模块：检查今日种子条目是否存在，不存在则创建
-      const {data:existing}=await sb.from('items').select('id')
-        .eq('module_id',mod.id)
-        .eq('user_id',currentUser.id)
-        .eq('date',today)
-        .eq('is_seed',true);
+      const {data:existing,error:e1}=await sb.from('items').select('id')
+        .eq('module_id',mod.id).eq('user_id',currentUser.id)
+        .eq('date',today).eq('is_seed',true);
+      if(e1){console.error('[init] daily查询失败:',e1);continue;}
       if(!existing||existing.length===0){
         if(seeds.length>0){
-          const inserts=seeds.map(s=>({
-            module_id:mod.id,
-            user_id:currentUser.id,
-            title:s.title,
-            note:s.note||'',
-            badge:'pending',
-            date:today,
-            is_seed:true
-          }));
-          await sb.from('items').insert(inserts);
+          const inserts=seeds.map(s=>({module_id:mod.id,user_id:currentUser.id,title:s.title,note:s.note||'',badge:'pending',date:today,is_seed:true}));
+          const {error:e2}=await sb.from('items').insert(inserts);
+          if(e2){console.error('[init] daily插入失败:',e2);continue;}
+          console.log(`[init] daily "${mod.name}" 创建 ${inserts.length} 条`);
         }
-      }
-      // 刷新当前视图
-      if(activeModId===mod.id && currentRole==='operator'){
-        const m=modulesCache.find(m=>m.id===mod.id);
-        if(m) loadListData(m);
-      }
+      }else{console.log(`[init] daily "${mod.name}" 已有 ${existing.length} 条`);}
 
     }else if(rule==='checklist'){
-      // 检查表模块：种子条目持久存在，新一天重置打勾状态
-      const {data:existing}=await sb.from('items').select('id,title,is_seed')
-        .eq('module_id',mod.id)
-        .eq('user_id',currentUser.id);
+      const {data:existing,error:e3}=await sb.from('items').select('id,title,is_seed')
+        .eq('module_id',mod.id).eq('user_id',currentUser.id);
+      if(e3){console.error('[init] checklist查询失败:',e3);continue;}
       const existingSeeds=(existing||[]).filter(i=>i.is_seed);
+      console.log(`[init] checklist "${mod.name}" 已有种子 ${existingSeeds.length}，总 ${(existing||[]).length}`);
 
-      // 检查是否有缺失的种子条目（管理者可能新增了种子内容）
+      // 确保种子条目存在
       const missingSeeds=seeds.filter(s=>!existingSeeds.some(e=>e.title===s.title));
       if(missingSeeds.length>0){
-        const inserts=missingSeeds.map((s,i)=>({
-          module_id:mod.id,
-          user_id:currentUser.id,
-          title:s.title,
-          note:s.note||'',
-          badge:'unchecked',
-          is_seed:true
-        }));
-        await sb.from('items').insert(inserts);
-      }
+        const inserts=missingSeeds.map(s=>({module_id:mod.id,user_id:currentUser.id,title:s.title,note:s.note||'',badge:'unchecked',is_seed:true}));
+        const {error:e4}=await sb.from('items').insert(inserts);
+        if(e4){console.error('[init] checklist插入失败:',e4);continue;}
+        console.log(`[init] checklist "${mod.name}" 补充 ${inserts.length} 条`);
+      }else if(seeds.length>0 && existingSeeds.length===0){
+        // 种子数据存在但条目为空 — 全量插入
+        const inserts=seeds.map(s=>({module_id:mod.id,user_id:currentUser.id,title:s.title,note:s.note||'',badge:'unchecked',is_seed:true}));
+        const {error:e4b}=await sb.from('items').insert(inserts);
+        if(e4b){console.error('[init] checklist全量插入失败:',e4b);continue;}
+        console.log(`[init] checklist "${mod.name}" 全量创建 ${inserts.length} 条`);
+      }else{console.log(`[init] checklist "${mod.name}" 种子完整`);}
 
-      // 新一天重置：把所有 checked 状态改为 unchecked
+      // 新一天重置
       const lastReset=localStorage.getItem('cl_reset_'+mod.id+'_'+currentUser.id);
       if(lastReset!==today){
-        await sb.from('items').update({badge:'unchecked'})
-          .eq('module_id',mod.id)
-          .eq('user_id',currentUser.id)
-          .in('badge',['checked']);
-        localStorage.setItem('cl_reset_'+mod.id+'_'+currentUser.id,today);
+        const {error:e5}=await sb.from('items').update({badge:'unchecked'})
+          .eq('module_id',mod.id).eq('user_id',currentUser.id).in('badge',['checked']);
+        if(e5){console.error('[init] checklist重置失败:',e5);}else{
+          localStorage.setItem('cl_reset_'+mod.id+'_'+currentUser.id,today);
+        }
       }
-
-      // 刷新当前视图
-      if(activeModId===mod.id && currentRole==='operator'){
-        const m=modulesCache.find(m=>m.id===mod.id);
-        if(m) loadListData(m);
-      }
-
     }
-    // normal 模块：不做任何自动操作
+    }catch(err){console.error(`[init] "${mod.name}" 异常:`,err);}
   }
 }
 
@@ -1003,16 +986,30 @@ async function loadListData(mod){
 
 // ========== 加载检查表数据 ==========
 async function loadChecklistData(mod){
+  try{
   if(currentRole==='operator'){
-    const {data:items}=await sb.from('items').select('*')
+    const {data:items,error}=await sb.from('items').select('*')
       .eq('module_id',mod.id).eq('user_id',currentUser.id);
-    renderChecklist(mod,items||[]);
+    if(error){console.error('[loadChecklist] 运营查询失败:',error);return;}
+    const list=items||[];
+    console.log(`[loadChecklist] 运营 "${mod.name}" 获取 ${list.length} 条`);
+    if(list.length===0){
+      // 条目为空可能是因为种子还没创建，再跑一次初始化
+      await initModuleItems();
+      const {data:items2,error:e2}=await sb.from('items').select('*')
+        .eq('module_id',mod.id).eq('user_id',currentUser.id);
+      if(e2||!items2){console.error('[loadChecklist] 二次查询失败:',e2);return;}
+      renderChecklist(mod,items2||[]);
+    }else{
+      renderChecklist(mod,list);
+    }
   }else{
-    // 管理者看所有运营的检查表汇总
-    const {data:ops}=await sb.from('profiles').select('id,display_name').eq('role','operator');
-    const {data:allItems}=await sb.from('items').select('*').eq('module_id',mod.id);
+    const {data:ops,error:e1}=await sb.from('profiles').select('id,display_name').eq('role','operator');
+    const {data:allItems,error:e2}=await sb.from('items').select('*').eq('module_id',mod.id);
+    if(e1||e2){console.error('[loadChecklist] 管理者查询失败:',e1,e2);return;}
     renderManagerChecklist(mod,allItems||[],ops||[]);
   }
+  }catch(err){console.error('[loadChecklist] 异常:',err);}
 }
 
 // ========== 渲染运营检查表 ==========
@@ -1056,22 +1053,13 @@ function renderChecklist(mod, items){
 }
 
 async function toggleCheck(itemId, modId){
-  const {data:item}=await sb.from('items').select('badge').eq('id',itemId).single();
-  if(!item) return;
+  const {data:item,error:e1}=await sb.from('items').select('badge').eq('id',itemId).single();
+  if(e1||!item){console.error('[toggleCheck] 查询失败:',e1);return;}
   const newBadge=item.badge==='checked'?'unchecked':'checked';
-  await sb.from('items').update({badge:newBadge}).eq('id',itemId);
+  const {error:e2}=await sb.from('items').update({badge:newBadge}).eq('id',itemId);
+  if(e2){console.error('[toggleCheck] 更新失败:',e2);return;}
   const mod=modulesCache.find(m=>m.id===modId);
   if(mod) loadChecklistData(mod);
-
-  // 检查是否全部完成，自动重置
-  if(newBadge==='checked'){
-    const {data:allItems}=await sb.from('items').select('badge')
-      .eq('module_id',modId).eq('user_id',currentUser.id);
-    const allChecked=allItems.every(i=>i.badge==='checked');
-    if(allChecked && allItems.length>0){
-      // 不自动重置，而是显示提示让用户手动重置或等新一天
-    }
-  }
 }
 
 async function resetChecklist(modId){
