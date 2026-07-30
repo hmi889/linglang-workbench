@@ -188,6 +188,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue"
 .um-role.manager{background:#d1fae5;color:#065f46}
 .um-role-btn{background:#f0ede4;border:none;border-radius:8px;padding:4px 8px;font-size:12px;cursor:pointer;margin-left:6px}
 
+/* 店铺标签 */
+.store-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.store-tab{padding:8px 14px;border-radius:10px;background:#f0ede4;font-size:13px;cursor:pointer;transition:.2s;font-weight:500}
+.store-tab:hover{background:var(--pale)}
+.store-tab.active{background:var(--primary);color:#fff}
+.store-tab.done{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
+.store-tab.active.done{background:var(--primary);color:#fff}
+.store-all-badge{font-size:11px;padding:2px 6px;border-radius:6px;margin-left:4px}
+/* 店铺管理 */
+.store-mgmt-card{background:#fafaf3;border-radius:12px;padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.store-mgmt-name{font-size:14px;font-weight:500;flex:1}
+.store-op-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.store-op-chip{font-size:11px;padding:2px 8px;border-radius:6px;background:#dbeafe;color:#1e40af}
+.store-op-chip.remove{background:#fee2e2;color:#991b1b;cursor:pointer}
+
 @media(max-width:768px){
   .mobile-hd{display:flex}
   .sidebar{left:-100%;padding-top:64px;box-shadow:4px 0 20px rgba(0,0,0,.1)}
@@ -255,7 +270,10 @@ let currentUser = null;
 let currentRole = 'operator';
 let isRegisterMode = false;
 let modulesCache = [];
+let storesCache = []; // 店铺列表
+let storeOpsCache = []; // 店铺-运营关联
 let activeModId = '';
+let activeStoreId = 'all'; // 当前查看的店铺
 let viewingUserId = null;
 
 const TD=()=>new Date().toISOString().slice(0,10);
@@ -355,6 +373,11 @@ function enterApp(){
 async function loadModules(){
   const {data}=await sb.from('modules').select('*').order('sort_order');
   modulesCache=data||[];
+  // 加载店铺数据
+  const {data:st}=await sb.from('stores').select('*').order('sort_order');
+  storesCache=st||[];
+  const {data:so}=await sb.from('store_operators').select('*');
+  storeOpsCache=so||[];
   if(!activeModId) activeModId=modulesCache.find(m=>m.name==='运营每日工作')?.id||modulesCache[0]?.id||'';
   // 先初始化种子条目，再渲染（确保条目存在后再显示）
   await initModuleItems();
@@ -388,26 +411,39 @@ async function initModuleItems(){
       }else{console.log(`[init] daily "${mod.name}" 已有 ${existing.length} 条`);}
 
     }else if(rule==='checklist'){
-      const {data:existing,error:e3}=await sb.from('items').select('id,title,is_seed')
-        .eq('module_id',mod.id).eq('user_id',currentUser.id);
-      if(e3){console.error('[init] checklist查询失败:',e3);continue;}
-      const existingSeeds=(existing||[]).filter(i=>i.is_seed);
-      console.log(`[init] checklist "${mod.name}" 已有种子 ${existingSeeds.length}，总 ${(existing||[]).length}`);
+      // 获取运营被分配的店铺
+      const myStores=storesCache.filter(s=>storeOpsCache.some(so=>so.store_id===s.id && so.operator_id===currentUser.id));
+      console.log(`[init] checklist "${mod.name}" 分配店铺 ${myStores.length} 个: ${myStores.map(s=>s.name).join(',')}`);
 
-      // 确保种子条目存在
-      const missingSeeds=seeds.filter(s=>!existingSeeds.some(e=>e.title===s.title));
-      if(missingSeeds.length>0){
-        const inserts=missingSeeds.map(s=>({module_id:mod.id,user_id:currentUser.id,title:s.title,note:s.note||'',badge:'unchecked',is_seed:true}));
-        const {error:e4}=await sb.from('items').insert(inserts);
-        if(e4){console.error('[init] checklist插入失败:',e4);continue;}
-        console.log(`[init] checklist "${mod.name}" 补充 ${inserts.length} 条`);
-      }else if(seeds.length>0 && existingSeeds.length===0){
-        // 种子数据存在但条目为空 — 全量插入
-        const inserts=seeds.map(s=>({module_id:mod.id,user_id:currentUser.id,title:s.title,note:s.note||'',badge:'unchecked',is_seed:true}));
-        const {error:e4b}=await sb.from('items').insert(inserts);
-        if(e4b){console.error('[init] checklist全量插入失败:',e4b);continue;}
-        console.log(`[init] checklist "${mod.name}" 全量创建 ${inserts.length} 条`);
-      }else{console.log(`[init] checklist "${mod.name}" 种子完整`);}
+      if(myStores.length===0 && seeds.length>0){
+        // 没有分配店铺但种子有内容 — 无店铺模式（兼容旧数据）
+        const {data:existing,error:e3}=await sb.from('items').select('id,title,is_seed,store_id')
+          .eq('module_id',mod.id).eq('user_id',currentUser.id);
+        if(e3){console.error('[init] checklist无店铺查询失败:',e3);continue;}
+        const existingSeeds=(existing||[]).filter(i=>i.is_seed && !i.store_id);
+        const missingSeeds=seeds.filter(s=>!existingSeeds.some(e=>e.title===s.title));
+        if(missingSeeds.length>0){
+          const inserts=missingSeeds.map(s=>({module_id:mod.id,user_id:currentUser.id,title:s.title,note:s.note||'',badge:'unchecked',is_seed:true,store_id:null}));
+          const {error:e4}=await sb.from('items').insert(inserts);
+          if(e4){console.error('[init] checklist无店铺插入失败:',e4);continue;}
+          console.log(`[init] checklist "${mod.name}" 无店铺补充 ${inserts.length} 条`);
+        }
+      }else{
+        // 有分配店铺 — 为每个店铺创建检查条目
+        for(const store of myStores){
+          const {data:existing,error:e3}=await sb.from('items').select('id,title,is_seed')
+            .eq('module_id',mod.id).eq('user_id',currentUser.id).eq('store_id',store.id);
+          if(e3){console.error('[init] checklist店铺查询失败:',e3);continue;}
+          const existingSeeds=(existing||[]).filter(i=>i.is_seed);
+          const missingSeeds=seeds.filter(s=>!existingSeeds.some(e=>e.title===s.title));
+          if(missingSeeds.length>0){
+            const inserts=missingSeeds.map(s=>({module_id:mod.id,user_id:currentUser.id,title:s.title,note:s.note||'',badge:'unchecked',is_seed:true,store_id:store.id}));
+            const {error:e4}=await sb.from('items').insert(inserts);
+            if(e4){console.error(`[init] checklist店铺"${store.name}"插入失败:`,e4);continue;}
+            console.log(`[init] checklist "${mod.name}" 店铺"${store.name}" 补充 ${inserts.length} 条`);
+          }else{console.log(`[init] checklist "${mod.name}" 店铺"${store.name}" 种子完整`);}
+        }
+      }
 
       // 新一天重置
       const lastReset=localStorage.getItem('cl_reset_'+mod.id+'_'+currentUser.id);
@@ -654,6 +690,13 @@ function renderManagerSettings(){
         <button class="btn btn-p btn-sm" onclick="addModule()">+ 添加模块</button>
       </div>
 
+      <text class="section-title">🏪 店铺管理</text>
+      <div id="storeMgmtList"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn btn-p btn-sm" onclick="addStore()">+ 添加店铺</button>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:var(--muted)">💡 店铺分配给运营后，检查表会按店铺独立跟踪检查进度</div>
+
       <text class="section-title">💾 数据</text>
       <div class="row" style="margin-top:8px">
         <button class="btn btn-g" onclick="exportTeamData()">📤 导出团队数据</button>
@@ -666,6 +709,7 @@ function renderManagerSettings(){
 
 async function loadSettingsData(){
   const {data:users}=await sb.from('profiles').select('*');
+  const {data:allOps}=await sb.from('profiles').select('id,display_name').eq('role','operator');
   const umList=$('#userMgmtList');
   umList.innerHTML='';
   (users||[]).forEach(u=>{
@@ -690,6 +734,33 @@ async function loadSettingsData(){
         <button class="btn btn-sm btn-g" onclick="editModule('${mod.id}')">✏️</button>
         <button class="btn btn-sm btn-g" onclick="editSeedContent('${mod.id}')">📝种子</button>
         <button class="btn btn-sm btn-r" onclick="delModule('${mod.id}')">✕</button>
+      </div>
+    </div>`;
+  });
+
+  // 店铺管理
+  const stList=$('#storeMgmtList');
+  stList.innerHTML='';
+  const ops=allOps||[];
+  storesCache.forEach(st=>{
+    const assignedOps=storeOpsCache.filter(so=>so.store_id===st.id);
+    const opChips=assignedOps.map(so=>{
+      const op=ops.find(o=>o.id===so.operator_id);
+      const opName=op?.display_name||so.operator_id.slice(0,8);
+      return `<span class="store-op-chip remove" onclick="removeOpFromStore('${st.id}','${so.operator_id}')">${esc(opName)} ✕</span>`;
+    }).join('');
+    const unassignedOps=ops.filter(o=>!assignedOps.some(so=>so.operator_id===o.id));
+    const addBtn=unassignedOps.length>0
+      ?`<select onchange="if(this.value)assignOpToStore('${st.id}',this.value);this.value=''" style="font-size:12px;border-radius:8px;border:1px solid var(--border);padding:2px 8px;background:var(--pale)">
+        <option value="">+ 分配运营</option>
+        ${unassignedOps.map(o=>`<option value="${o.id}">${esc(o.display_name||o.id.slice(0,8))}</option>`).join('')}
+      </select>`
+      :'';
+    stList.innerHTML+=`<div class="store-mgmt-card">
+      <div class="store-mgmt-name">🏪 ${esc(st.name)}</div>
+      <button class="btn btn-sm btn-r" onclick="removeStore('${st.id}')">✕</button>
+      <div style="width:100%">
+        <div class="store-op-chips">${opChips}${addBtn}</div>
       </div>
     </div>`;
   });
@@ -731,6 +802,50 @@ async function delModule(modId){
   await sb.from('modules').delete().eq('id',modId);
   await loadModules();
   activeModId='settings';renderSidebar();renderContent();
+}
+
+// ========== 店铺管理 ==========
+async function addStore(){
+  const name=prompt('店铺名称：');if(!name||!name.trim()) return;
+  await sb.from('stores').insert({name:name.trim()});
+  await loadStoresData();
+  loadSettingsData();
+}
+
+async function removeStore(storeId){
+  if(!confirm('删除店铺？该店铺的所有检查数据也会删除！')) return;
+  await sb.from('store_operators').delete().eq('store_id',storeId);
+  await sb.from('items').delete().eq('store_id',storeId);
+  await sb.from('stores').delete().eq('id',storeId);
+  await loadStoresData();
+  loadSettingsData();
+}
+
+async function assignOpToStore(storeId, opId){
+  await sb.from('store_operators').insert({store_id:storeId,operator_id:opId});
+  await loadStoresData();
+  loadSettingsData();
+  // 为该运营在新分配的店铺创建检查表种子条目
+  await initModuleItems();
+  if(activeModId&&modulesCache.find(m=>m.id===activeModId&&m.module_rule==='checklist')){
+    const mod=modulesCache.find(m=>m.id===activeModId);
+    if(mod) loadChecklistData(mod);
+  }
+}
+
+async function removeOpFromStore(storeId, opId){
+  if(!confirm('取消分配？该运营在该店铺的检查数据也会删除！')) return;
+  await sb.from('items').delete().eq('store_id',storeId).eq('user_id',opId);
+  await sb.from('store_operators').delete().eq('store_id',storeId).eq('operator_id',opId);
+  await loadStoresData();
+  loadSettingsData();
+}
+
+async function loadStoresData(){
+  const {data:st}=await sb.from('stores').select('*').order('name');
+  const {data:so}=await sb.from('store_operators').select('*');
+  storesCache=st||[];
+  storeOpsCache=so||[];
 }
 
 // ========== 管理者 - 编辑种子内容 ==========
@@ -903,7 +1018,7 @@ function renderListModule(mod){
   const rule=mod.module_rule||'normal';
   const isOperator=currentRole==='operator';
 
-  if(rule==='checklist' && isOperator){
+  if(rule==='checklist'){
     return renderChecklistModule(mod);
   }
 
@@ -935,10 +1050,25 @@ function renderListModule(mod){
 
 // ========== 检查表模块渲染 ==========
 function renderChecklistModule(mod){
+  const isOperator=currentRole==='operator';
+  const myStores=isOperator
+    ? storesCache.filter(s=>storeOpsCache.some(so=>so.store_id===s.id && so.operator_id===currentUser.id))
+    : storesCache;
+  const hasStores=myStores.length>0;
+
+  let storeTabsHtml='';
+  if(hasStores && isOperator){
+    storeTabsHtml=`<div class="store-tabs" id="storeTabs_${mod.id}">
+      <div class="store-tab active" onclick="switchStore('${mod.id}','all')">全部</div>
+      ${myStores.map(s=>`<div class="store-tab" data-store="${s.id}" onclick="switchStore('${mod.id}','${s.id}')">${esc(s.name)}</div>`).join('')}
+    </div>`;
+  }
+
   return `<section class="module" id="mod_${mod.id}">
     <div class="card">
       <div class="card-title"><span class="emoji">${mod.icon}</span>${esc(mod.name)}</div>
-      <div class="card-sub">📋 检查表：条目不可删除，打勾变暗，全部打勾或新一天自动重置</div>
+      <div class="card-sub">📋 检查表：条目不可删除，打勾变暗，全部打勾或新一天自动重置${hasStores?' · 每个店铺独立检查':''}</div>
+      ${storeTabsHtml}
       <div id="checkStats_${mod.id}" class="stats">
         <div class="stat"><div class="num" id="ckUnchecked_${mod.id}">-</div><div class="label">待检查</div></div>
         <div class="stat"><div class="num" style="color:var(--primary)" id="ckChecked_${mod.id}">-</div><div class="label">已检查</div></div>
@@ -950,6 +1080,19 @@ function renderChecklistModule(mod){
       <div id="checkItems_${mod.id}"></div>
     </div>
   </section>`;
+}
+
+function switchStore(modId, storeId){
+  activeStoreId=storeId;
+  // 更新标签高亮
+  $$('#storeTabs_'+modId+' .store-tab').forEach(t=>t.classList.remove('active'));
+  const target=storeId==='all'
+    ?$('#storeTabs_'+modId+' .store-tab:first-child')
+    :$('#storeTabs_'+modId+' .store-tab[data-store="'+storeId+'"]');
+  if(target) target.classList.add('active');
+  // 刷新数据
+  const mod=modulesCache.find(m=>m.id===modId);
+  if(mod) loadChecklistData(mod);
 }
 
 // ========== 加载列表数据 ==========
@@ -987,14 +1130,25 @@ async function loadListData(mod){
 // ========== 加载检查表数据 ==========
 async function loadChecklistData(mod){
   try{
+  const hasStores=storesCache.length>0;
   if(currentRole==='operator'){
-    const {data:items,error}=await sb.from('items').select('*')
-      .eq('module_id',mod.id).eq('user_id',currentUser.id);
+    let query=sb.from('items').select('*').eq('module_id',mod.id).eq('user_id',currentUser.id);
+    // 如果有店铺且不是"全部"，按店铺过滤
+    if(hasStores && activeStoreId!=='all'){
+      query=query.eq('store_id',activeStoreId);
+    }
+    const {data:items,error}=await query;
     if(error){console.error('[loadChecklist] 运营查询失败:',error);return;}
     const list=items||[];
-    console.log(`[loadChecklist] 运营 "${mod.name}" 获取 ${list.length} 条`);
-    if(list.length===0){
-      // 条目为空可能是因为种子还没创建，再跑一次初始化
+    console.log(`[loadChecklist] 运营 "${mod.name}" store=${activeStoreId} 获取 ${list.length} 条`);
+    if(list.length===0 && hasStores && activeStoreId==='all'){
+      // 全部模式下空数据，可能是还没创建店铺条目
+      await initModuleItems();
+      const {data:items2,error:e2}=await sb.from('items').select('*')
+        .eq('module_id',mod.id).eq('user_id',currentUser.id);
+      if(e2||!items2){console.error('[loadChecklist] 二次查询失败:',e2);return;}
+      renderChecklist(mod,items2||[]);
+    }else if(list.length===0 && !hasStores){
       await initModuleItems();
       const {data:items2,error:e2}=await sb.from('items').select('*')
         .eq('module_id',mod.id).eq('user_id',currentUser.id);
@@ -1004,8 +1158,13 @@ async function loadChecklistData(mod){
       renderChecklist(mod,list);
     }
   }else{
+    // 管理者看所有运营的检查表汇总
     const {data:ops,error:e1}=await sb.from('profiles').select('id,display_name').eq('role','operator');
-    const {data:allItems,error:e2}=await sb.from('items').select('*').eq('module_id',mod.id);
+    let query=sb.from('items').select('*').eq('module_id',mod.id);
+    if(hasStores && activeStoreId!=='all'){
+      query=query.eq('store_id',activeStoreId);
+    }
+    const {data:allItems,error:e2}=await query;
     if(e1||e2){console.error('[loadChecklist] 管理者查询失败:',e1,e2);return;}
     renderManagerChecklist(mod,allItems||[],ops||[]);
   }
@@ -1014,42 +1173,105 @@ async function loadChecklistData(mod){
 
 // ========== 渲染运营检查表 ==========
 function renderChecklist(mod, items){
-  const checked=items.filter(i=>i.badge==='checked').length;
-  const unchecked=items.filter(i=>i.badge==='unchecked').length;
-  const total=items.length;
+  const hasStores=storesCache.length>0;
+  const myStores=storesCache.filter(s=>storeOpsCache.some(so=>so.store_id===s.id && so.operator_id===currentUser.id));
+
+  // 按店铺分组显示（全部模式）或单店铺显示
+  const isAllMode=activeStoreId==='all';
+  let filteredItems=items;
+  if(!isAllMode && hasStores){
+    filteredItems=items.filter(i=>i.store_id===activeStoreId);
+  }
+
+  const checked=filteredItems.filter(i=>i.badge==='checked').length;
+  const unchecked=filteredItems.filter(i=>i.badge==='unchecked').length;
+  const total=filteredItems.length;
   const pct=total?Math.round(checked/total*100):0;
 
   $('#ckUnchecked_'+mod.id).textContent=unchecked;
   $('#ckChecked_'+mod.id).textContent=checked;
   $('#ckTotal_'+mod.id).textContent=total;
   $('#ckProg_'+mod.id).style.width=pct+'%';
-  $('#ckProgLabel_'+mod.id).textContent=`检查进度：${pct}%（${checked}/${total}）`;
+  $('#ckProgLabel_'+mod.id).textContent=isAllMode&&hasStores
+    ?`总检查进度：${pct}%（${checked}/${total}）`
+    :`检查进度：${pct}%（${checked}/${total}）`;
 
   // 全部完成提示
   const doneMsg=$('#ckDoneMsg_'+mod.id);
-  if(checked===total && total>0){
-    doneMsg.innerHTML=`<div class="check-done-msg">🎉 全部检查完成！<button class="check-reset-btn" onclick="resetChecklist('${mod.id}')">重置所有状态</button></div>`;
+  // 检查每个店铺是否全部完成
+  if(hasStores && isAllMode){
+    let allDone=true;
+    let storeStatuses=[];
+    myStores.forEach(s=>{
+      const sItems=items.filter(i=>i.store_id===s.id);
+      const sChecked=sItems.filter(i=>i.badge==='checked').length;
+      const sTotal=sItems.length;
+      const sPct=sTotal?Math.round(sChecked/sTotal*100):0;
+      if(sChecked<sTotal) allDone=false;
+      storeStatuses.push({name:s.name,checked:sChecked,total:sTotal,pct:sPct});
+    });
+    // 更新店铺标签的完成状态
+    $$('#storeTabs_'+mod.id+' .store-tab[data-store]').forEach(tab=>{
+      const sId=tab.dataset.store;
+      const sItems=items.filter(i=>i.store_id===sId);
+      const allC=sItems.length>0 && sItems.every(i=>i.badge==='checked');
+      tab.classList.toggle('done',allC);
+      const status=allC?'✅':sItems.filter(i=>i.badge==='checked').length+'/'+sItems.length;
+      tab.innerHTML=esc(storesCache.find(s=>s.id===sId)?.name||sId)+' <span class="store-all-badge">'+status+'</span>';
+    });
+    if(allDone && myStores.length>0){
+      doneMsg.innerHTML=`<div class="check-done-msg">🎉 所有店铺检查完成！<button class="check-reset-btn" onclick="resetChecklist('${mod.id}')">重置所有状态</button></div>`;
+    }else{doneMsg.innerHTML='';}
   }else{
-    doneMsg.innerHTML='';
+    if(checked===total && total>0){
+      doneMsg.innerHTML=`<div class="check-done-msg">🎉 全部检查完成！<button class="check-reset-btn" onclick="resetChecklist('${mod.id}')">重置所有状态</button></div>`;
+    }else{doneMsg.innerHTML='';}
   }
 
   // 渲染条目列表
   const listEl=$('#checkItems_'+mod.id);
   listEl.innerHTML='';
-  if(total===0){
-    listEl.innerHTML='<div class="empty">暂无检查条目</div>';
-    return;
+  if(hasStores && isAllMode){
+    // 全部模式：按店铺分组显示
+    myStores.forEach(s=>{
+      const sItems=items.filter(i=>i.store_id===s.id);
+      if(sItems.length===0) return;
+      const sChecked=sItems.filter(i=>i.badge==='checked').length;
+      listEl.innerHTML+=`<div class="section-title">${esc(s.name)} · ${sChecked}/${sItems.length}</div>`;
+      sItems.forEach(it=>{
+        const isC=it.badge==='checked';
+        listEl.innerHTML+=`<div class="check-item${isC?' checked':''}">
+          <div class="check-box${isC?' done':''}" onclick="toggleCheck(${it.id},'${mod.id}')">${isC?'✓':''}</div>
+          <div class="ci-body"><div class="ci-title">${esc(it.title)}</div>${it.note?`<div class="ci-note">${esc(it.note)}</div>`:''}</div>
+        </div>`;
+      });
+    });
+    // 无店铺关联的条目（兼容旧数据）
+    const noStoreItems=items.filter(i=>!i.store_id);
+    if(noStoreItems.length>0){
+      listEl.innerHTML+=`<div class="section-title">通用检查 · ${noStoreItems.filter(i=>i.badge==='checked').length}/${noStoreItems.length}</div>`;
+      noStoreItems.forEach(it=>{
+        const isC=it.badge==='checked';
+        listEl.innerHTML+=`<div class="check-item${isC?' checked':''}">
+          <div class="check-box${isC?' done':''}" onclick="toggleCheck(${it.id},'${mod.id}')">${isC?'✓':''}</div>
+          <div class="ci-body"><div class="ci-title">${esc(it.title)}</div>${it.note?`<div class="ci-note">${esc(it.note)}</div>`:''}</div>
+        </div>`;
+      });
+    }
+  }else{
+    // 单店铺或无店铺模式
+    if(filteredItems.length===0){
+      listEl.innerHTML='<div class="empty">暂无检查条目</div>';
+      return;
+    }
+    filteredItems.forEach(it=>{
+      const isC=it.badge==='checked';
+      listEl.innerHTML+=`<div class="check-item${isC?' checked':''}">
+        <div class="check-box${isC?' done':''}" onclick="toggleCheck(${it.id},'${mod.id}')">${isC?'✓':''}</div>
+        <div class="ci-body"><div class="ci-title">${esc(it.title)}</div>${it.note?`<div class="ci-note">${esc(it.note)}</div>`:''}</div>
+      </div>`;
+    });
   }
-  items.forEach(it=>{
-    const isC=it.badge==='checked';
-    listEl.innerHTML+=`<div class="check-item${isC?' checked':''}">
-      <div class="check-box${isC?' done':''}" onclick="toggleCheck(${it.id},'${mod.id}')">${isC?'✓':''}</div>
-      <div class="ci-body">
-        <div class="ci-title">${esc(it.title)}</div>
-        ${it.note?`<div class="ci-note">${esc(it.note)}</div>`:''}
-      </div>
-    </div>`;
-  });
 }
 
 async function toggleCheck(itemId, modId){
@@ -1086,6 +1308,8 @@ function renderManagerChecklist(mod, allItems, ops){
   $('#ckProg_'+mod.id).style.width=pct+'%';
   $('#ckProgLabel_'+mod.id).textContent=`团队检查进度：${pct}%`;
 
+  const hasStores=storesCache.length>0;
+
   // 顶部：团队进度汇总
   let html='<div class="card-sub" style="margin-bottom:12px;font-weight:600">👥 团队进度</div>';
   ops.forEach(op=>{
@@ -1102,6 +1326,29 @@ function renderManagerChecklist(mod, allItems, ops){
       </div>
       <div class="user-pct">${myPct}%</div>
     </div>`;
+
+    // 有店铺时显示每个店铺的检查进度
+    if(hasStores){
+      const opStores=storesCache.filter(s=>storeOpsCache.some(so=>so.store_id===s.id && so.operator_id===op.id));
+      if(opStores.length>0){
+        html+='<div style="margin-left:42px;margin-bottom:8px">';
+        opStores.forEach(st=>{
+          const stItems=myItems.filter(i=>i.store_id===st.id);
+          const stChecked=stItems.filter(i=>i.badge==='checked').length;
+          const stTotal=stItems.length;
+          const stPct=stTotal?Math.round(stChecked/stTotal*100):0;
+          const stDone=stTotal>0&&stChecked===stTotal;
+          html+=`<div style="display:flex;align-items:center;gap:6px;margin:3px 0;font-size:12px">
+            <span style="color:${stDone?'#065f46':'var(--muted)'}">${stDone?'✅':'🏪'} ${esc(st.name)}</span>
+            <span style="color:var(--muted)">${stChecked}/${stTotal}</span>
+            <div style="flex:1;height:4px;background:#e5e5e5;border-radius:2px;max-width:100px">
+              <div style="height:100%;width:${stPct}%;background:${stDone?'#10b981':'var(--primary)'};border-radius:2px"></div>
+            </div>
+          </div>`;
+        });
+        html+='</div>';
+      }
+    }
   });
 
   // 下方：模块默认内容（种子条目）
