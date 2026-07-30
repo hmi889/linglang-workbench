@@ -432,7 +432,7 @@ async function initModuleItems(){
             .eq('date',today).eq('is_seed',true).is('store_id',null);
           if(e1){console.error('[init] daily+stores无店铺查询失败:',e1);continue;}
           if((!existing||existing.length===0) && seeds.length>0){
-            const inserts=seeds.map(s=>({module_id:mod.id,user_id:currentUser.id,title:s.title,note:s.note||'',badge:'pending',date:today,is_seed:true,store_id:null}));
+            const inserts=seeds.map(s=>({module_id:mod.id,user_id:currentUser.id,title:s.title,note:s.note||'',badge:'progress',date:today,is_seed:true,store_id:null}));
             const {error:e2}=await sb.from('items').insert(inserts);
             if(e2){console.error('[init] daily+stores无店铺插入失败:',e2);continue;}
             console.log(`[init] daily+stores "${mod.name}" 无店铺创建 ${inserts.length} 条`);
@@ -444,7 +444,7 @@ async function initModuleItems(){
               .eq('date',today).eq('is_seed',true).eq('store_id',store.id);
             if(e1){console.error(`[init] daily+stores店铺"${store.name}"查询失败:`,e1);continue;}
             if((!existing||existing.length===0) && seeds.length>0){
-              const inserts=seeds.map(s=>({module_id:mod.id,user_id:currentUser.id,title:s.title,note:s.note||'',badge:'pending',date:today,is_seed:true,store_id:store.id}));
+              const inserts=seeds.map(s=>({module_id:mod.id,user_id:currentUser.id,title:s.title,note:s.note||'',badge:'progress',date:today,is_seed:true,store_id:store.id}));
               const {error:e2}=await sb.from('items').insert(inserts);
               if(e2){console.error(`[init] daily+stores店铺"${store.name}"插入失败:`,e2);continue;}
               console.log(`[init] daily+stores "${mod.name}" 店铺"${store.name}" 创建 ${inserts.length} 条`);
@@ -459,7 +459,7 @@ async function initModuleItems(){
         if(e1){console.error('[init] daily查询失败:',e1);continue;}
         if(!existing||existing.length===0){
           if(seeds.length>0){
-            const inserts=seeds.map(s=>({module_id:mod.id,user_id:currentUser.id,title:s.title,note:s.note||'',badge:'pending',date:today,is_seed:true}));
+            const inserts=seeds.map(s=>({module_id:mod.id,user_id:currentUser.id,title:s.title,note:s.note||'',badge:'progress',date:today,is_seed:true}));
             const {error:e2}=await sb.from('items').insert(inserts);
             if(e2){console.error('[init] daily插入失败:',e2);continue;}
             console.log(`[init] daily "${mod.name}" 创建 ${inserts.length} 条`);
@@ -680,14 +680,12 @@ async function viewUserDetail(userId, userName){
     }else{
       const done=modItems.filter(i=>i.badge==='done').length;
       const prog=modItems.filter(i=>i.badge==='progress').length;
-      const pend=modItems.filter(i=>i.badge==='pending').length;
       const total=modItems.length;
       const pct=total?Math.round(done/total*100):0;
-      const cycles=mod.badge_cycle?mod.badge_cycle.split(','):['pending','progress','done'];
-      const labels=mod.badge_labels?mod.badge_labels.split(','):cycles;
+      const cycles=mod.badge_cycle?mod.badge_cycle.split(','):['progress','done'];
+      const labels=mod.badge_labels?mod.badge_labels.split(','):['进行中','已完成'];
       html+=`<div style="margin-top:16px"><text class="section-title">${mod.icon} ${esc(mod.name)}</text>`;
       html+=`<div class="stats" style="margin-bottom:8px">
-        <div class="stat"><div class="num">${pend}</div><div class="label">待处理</div></div>
         <div class="stat"><div class="num" style="color:var(--blue)">${prog}</div><div class="label">进行中</div></div>
         <div class="stat"><div class="num" style="color:var(--primary)">${done}</div><div class="label">已完成</div></div>
       </div>`;
@@ -871,8 +869,8 @@ async function addModule(){
   const tpMap={'1':'1688','2':'shein','3':'temu','4':'1688,shein,temu'};
   const targetPositions=tpMap[targetPos]||'1688,shein,temu';
   const useStores=mt==='list' && ruleVal==='daily'?prompt('是否需要按店铺分页？\n1 = 是（每个店铺独立跟踪）\n2 = 否','2')==='1':false;
-  const bc=mt==='list'?(ruleVal==='checklist'?'unchecked,checked':'pending,progress,done'):'';
-  const bl=mt==='list'?(ruleVal==='checklist'?'未检查,已检查':'待处理,进行中,已完成'):'';
+  const bc=mt==='list'?(ruleVal==='checklist'?'unchecked,checked':'progress,done'):'';
+  const bl=mt==='list'?(ruleVal==='checklist'?'未检查,已检查':'进行中,已完成'):'';
   const maxSort=modulesCache.reduce((mx,m)=>Math.max(mx,m.sort_order||0),0);
   await sb.from('modules').insert({icon:icon||'📌',name:name.trim(),type:mt,module_rule:ruleVal,target_positions:targetPositions,use_stores:useStores,badge_cycle:bc,badge_labels:bl,sort_order:maxSort+1});
   await loadModules();
@@ -1131,7 +1129,9 @@ function renderListModule(mod){
     }
   }
 
-  const addRow=isOperator?`<div class="row" style="margin-bottom:12px">
+  // 运营只有普通模块可以添加条目；每日工作和检查表内容由管理者定义，运营不可编辑
+  const canAdd=isOperator && rule==='normal';
+  const addRow=canAdd?`<div class="row" style="margin-bottom:12px">
     <input class="input" id="addInput_${mod.id}" placeholder="添加条目…" style="flex:1" onkeydown="if(event.key==='Enter')addItem('${mod.id}')">
     ${cycles.length>1?`<select class="input" id="addBadge_${mod.id}" style="flex:0 0 100px;font-size:13px">${selOptions}</select>`:''}
     <button class="btn btn-p" onclick="addItem('${mod.id}')">添加</button>
@@ -1370,7 +1370,7 @@ function renderOperatorList(mod,items,cycles,labels,today,rule){
   const pct=total?Math.round(done/total*100):0;
 
   const counts=cycles.map(c=>({count:items.filter(i=>i.badge===c).length,label:labels[cycles.indexOf(c)]}));
-  const colors=['','color:var(--blue)','color:var(--primary)'];
+  const colors=['color:var(--blue)','color:var(--primary)'];
   $('#listStats_'+mod.id).innerHTML=counts.map((c,i)=>`<div class="stat"><div class="num" style="${colors[i]||''}">${c.count}</div><div class="label">${esc(c.label)}</div></div>`).join('');
   $('#listProg_'+mod.id).style.width=pct+'%';
   $('#listProgLabel_'+mod.id).textContent=`完成进度：${pct}%（${done}/${total}）`;
@@ -1383,8 +1383,9 @@ function renderOperatorList(mod,items,cycles,labels,today,rule){
     const ti=thumbIcons[it.badge]||mod.icon;
     const isDone=it.badge==='done'||it.badge==='checked';
     const isIssue=it.badge==='issue';
-    // 种子条目运营不可删除（daily模块的种子条目）
-    const canDelete=rule==='daily'&&it.is_seed?false:true;
+    // 每日工作和检查表的种子条目运营不可编辑/删除；普通模块自由编辑
+    const canEdit=rule==='normal';
+    const canDelete=rule==='normal';
     listEl.innerHTML+=`<div class="li" style="${isDone?'opacity:.7':isIssue?'background:#fef2f2':''}">
       <div class="thumb" onclick="cycleBadge('${mod.id}',${it.id})">${ti}</div>
       <div class="meta">
@@ -1393,7 +1394,7 @@ function renderOperatorList(mod,items,cycles,labels,today,rule){
         <div class="badges"><span class="badge ${bc}">${esc(bt)}</span><span style="font-size:11px;color:var(--muted)">${rule==='daily'?it.date:''}</span></div>
       </div>
       <div class="ops">
-        <button class="icon-btn" onclick="editItem(${it.id})">✏️</button>
+        ${canEdit?`<button class="icon-btn" onclick="editItem(${it.id})">✏️</button>`:''}
         ${canDelete?`<button class="icon-btn del" onclick="delItem(${it.id},'${mod.id}')">🗑</button>`:''}
       </div>
     </div>`;
@@ -1453,7 +1454,7 @@ function renderManagerList(mod,allItems,ops,cycles,labels,today){
 async function addItem(modId){
   const v=$('#addInput_'+modId).value.trim();if(!v) return;
   const bEl=$('#addBadge_'+modId);
-  const b=bEl?bEl.value:'pending';
+  const b=bEl?bEl.value:'progress';
   const mod=modulesCache.find(m=>m.id===modId);
   const rule=mod.module_rule||'normal';
   const useStores=mod.use_stores===true;
