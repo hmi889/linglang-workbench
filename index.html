@@ -23,6 +23,7 @@ var supabase=(function(e){function t(e,t){var n={};for(var r in e)Object.prototy
 Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/auth-js: Invalid SIWE message field "resources". Every resource must be a valid string. Provided value: ${t}`);e+=`\n- ${t}`}m+=e}return`${p}\n${m}`}var $=class extends Error{constructor({message:e,code:t,cause:n,name:r}){super(e,{cause:n}),this.__isWebAuthnError=!0,this.name=r??(n instanceof Error?n.name:void 0)??`Unknown Error`,this.code=t}toJSON(){return{name:this.name,message:this.message,code:this.code}}},bi=class extends ${constructor(e,t){super({code:`ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY`,cause:t,message:e}),this.name=`WebAuthnUnknownError`,this.originalError=t}};function xi({error:e,options:t}){let{publicKey:n}=t;if(!n)throw Error(`options was missing required publicKey property`);if(e.name===`AbortError`){if(t.signal instanceof AbortSignal)return new $({message:`Registration ceremony was sent an abort signal`,code:`ERROR_CEREMONY_ABORTED`,cause:e})}else if(e.name===`ConstraintError`){if(n.authenticatorSelection?.requireResidentKey===!0)return new $({message:`Discoverable credentials were required but no available authenticator supported it`,code:`ERROR_AUTHENTICATOR_MISSING_DISCOVERABLE_CREDENTIAL_SUPPORT`,cause:e});if(t.mediation===`conditional`&&n.authenticatorSelection?.userVerification===`required`)return new $({message:`User verification was required during automatic registration but it could not be performed`,code:`ERROR_AUTO_REGISTER_USER_VERIFICATION_FAILURE`,cause:e});if(n.authenticatorSelection?.userVerification===`required`)return new $({message:`User verification was required but no available authenticator supported it`,code:`ERROR_AUTHENTICATOR_MISSING_USER_VERIFICATION_SUPPORT`,cause:e})}else if(e.name===`InvalidStateError`)return new $({message:`The authenticator was previously registered`,code:`ERROR_AUTHENTICATOR_PREVIOUSLY_REGISTERED`,cause:e});else if(e.name===`NotAllowedError`)return new $({message:e.message,code:`ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY`,cause:e});else if(e.name===`NotSupportedError`)return n.pubKeyCredParams.filter(e=>e.type===`public-key`).length===0?new $({message:`No entry in pubKeyCredParams was of type "public-key"`,code:`ERROR_MALFORMED_PUBKEYCREDPARAMS`,cause:e}):new $({message:`No available authenticator supported any of the specified pubKeyCredParams algorithms`,code:`ERROR_AUTHENTICATOR_NO_SUPPORTED_PUBKEYCREDPARAMS_ALG`,cause:e});else if(e.name===`SecurityError`){let t=window.location.hostname;if(Oi(t)){if(n.rp.id!==t)return new $({message:`The RP ID "${n.rp.id}" is invalid for this domain`,code:`ERROR_INVALID_RP_ID`,cause:e})}else return new $({message:`${window.location.hostname} is an invalid domain`,code:`ERROR_INVALID_DOMAIN`,cause:e})}else if(e.name===`TypeError`){if(n.user.id.byteLength<1||n.user.id.byteLength>64)return new $({message:`User ID was not between 1 and 64 characters`,code:`ERROR_INVALID_USER_ID_LENGTH`,cause:e})}else if(e.name===`UnknownError`)return new $({message:`The authenticator was unable to process the specified options, or could not create a new credential`,code:`ERROR_AUTHENTICATOR_GENERAL_ERROR`,cause:e});return new $({message:`a Non-Webauthn related error has occurred`,code:`ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY`,cause:e})}function Si({error:e,options:t}){let{publicKey:n}=t;if(!n)throw Error(`options was missing required publicKey property`);if(e.name===`AbortError`){if(t.signal instanceof AbortSignal)return new $({message:`Authentication ceremony was sent an abort signal`,code:`ERROR_CEREMONY_ABORTED`,cause:e})}else if(e.name===`NotAllowedError`)return new $({message:e.message,code:`ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY`,cause:e});else if(e.name===`SecurityError`){let t=window.location.hostname;if(Oi(t)){if(n.rpId!==t)return new $({message:`The RP ID "${n.rpId}" is invalid for this domain`,code:`ERROR_INVALID_RP_ID`,cause:e})}else return new $({message:`${window.location.hostname} is an invalid domain`,code:`ERROR_INVALID_DOMAIN`,cause:e})}else if(e.name===`UnknownError`)return new $({message:`The authenticator was unable to process the specified options, or could not create a new assertion signature`,code:`ERROR_AUTHENTICATOR_GENERAL_ERROR`,cause:e});return new $({message:`a Non-Webauthn related error has occurred`,code:`ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY`,cause:e})}let Ci=new class{createNewAbortSignal(){if(this.controller){let e=Error(`Cancelling existing WebAuthn API call for new one`);e.name=`AbortError`,this.controller.abort(e)}let e=new AbortController;return this.controller=e,e.signal}cancelCeremony(){if(this.controller){let e=Error(`Manually cancelling existing WebAuthn API call`);e.name=`AbortError`,this.controller.abort(e),this.controller=void 0}}};function wi(e){if(!e)throw Error(`Credential creation options are required`);if(typeof PublicKeyCredential<`u`&&`parseCreationOptionsFromJSON`in PublicKeyCredential&&typeof PublicKeyCredential.parseCreationOptionsFromJSON==`function`)return PublicKeyCredential.parseCreationOptionsFromJSON(e);let{challenge:n,user:r,excludeCredentials:i}=e,a=t(e,[`challenge`,`user`,`excludeCredentials`]),o=R(n).buffer,s=Object.assign(Object.assign({},r),{id:R(r.id).buffer}),c=Object.assign(Object.assign({},a),{challenge:o,user:s});if(i&&i.length>0){c.excludeCredentials=Array(i.length);for(let e=0;e<i.length;e++){let t=i[e];c.excludeCredentials[e]=Object.assign(Object.assign({},t),{id:R(t.id).buffer,type:t.type||`public-key`,transports:t.transports})}}return c}function Ti(e){if(!e)throw Error(`Credential request options are required`);if(typeof PublicKeyCredential<`u`&&`parseRequestOptionsFromJSON`in PublicKeyCredential&&typeof PublicKeyCredential.parseRequestOptionsFromJSON==`function`)return PublicKeyCredential.parseRequestOptionsFromJSON(e);let{challenge:n,allowCredentials:r}=e,i=t(e,[`challenge`,`allowCredentials`]),a=R(n).buffer,o=Object.assign(Object.assign({},i),{challenge:a});if(r&&r.length>0){o.allowCredentials=Array(r.length);for(let e=0;e<r.length;e++){let t=r[e];o.allowCredentials[e]=Object.assign(Object.assign({},t),{id:R(t.id).buffer,type:t.type||`public-key`,transports:t.transports})}}return o}function Ei(e){if(`toJSON`in e&&typeof e.toJSON==`function`)return e.toJSON();let t=e;return{id:e.id,rawId:e.id,response:{attestationObject:z(new Uint8Array(e.response.attestationObject)),clientDataJSON:z(new Uint8Array(e.response.clientDataJSON))},type:`public-key`,clientExtensionResults:e.getClientExtensionResults(),authenticatorAttachment:t.authenticatorAttachment??void 0}}function Di(e){if(`toJSON`in e&&typeof e.toJSON==`function`)return e.toJSON();let t=e,n=e.getClientExtensionResults(),r=e.response;return{id:e.id,rawId:e.id,response:{authenticatorData:z(new Uint8Array(r.authenticatorData)),clientDataJSON:z(new Uint8Array(r.clientDataJSON)),signature:z(new Uint8Array(r.signature)),userHandle:r.userHandle?z(new Uint8Array(r.userHandle)):void 0},type:`public-key`,clientExtensionResults:n,authenticatorAttachment:t.authenticatorAttachment??void 0}}function Oi(e){return e===`localhost`||/^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/i.test(e)}function ki(){return!!(B()&&`PublicKeyCredential`in window&&window.PublicKeyCredential&&`credentials`in navigator&&typeof(navigator==null?void 0:navigator.credentials)?.create==`function`&&typeof(navigator==null?void 0:navigator.credentials)?.get==`function`)}async function Ai(e){try{let t=await navigator.credentials.create(e);return t?t instanceof PublicKeyCredential?{data:t,error:null}:{data:null,error:new bi(`Browser returned unexpected credential type`,t)}:{data:null,error:new bi(`Empty credential response`,t)}}catch(t){return{data:null,error:xi({error:t,options:e})}}}async function ji(e){try{let t=await navigator.credentials.get(e);return t?t instanceof PublicKeyCredential?{data:t,error:null}:{data:null,error:new bi(`Browser returned unexpected credential type`,t)}:{data:null,error:new bi(`Empty credential response`,t)}}catch(t){return{data:null,error:Si({error:t,options:e})}}}let Mi={hints:[`security-key`],authenticatorSelection:{authenticatorAttachment:`cross-platform`,requireResidentKey:!1,userVerification:`preferred`,residentKey:`discouraged`},attestation:`direct`},Ni={userVerification:`preferred`,hints:[`security-key`],attestation:`direct`};function Pi(...e){let t=e=>typeof e==`object`&&!!e&&!Array.isArray(e),n=e=>e instanceof ArrayBuffer||ArrayBuffer.isView(e),r={};for(let i of e)if(i)for(let e in i){let a=i[e];if(a!==void 0)if(Array.isArray(a))r[e]=a;else if(n(a))r[e]=a;else if(t(a)){let n=r[e];t(n)?r[e]=Pi(n,a):r[e]=Pi(a)}else r[e]=a}return r}function Fi(e,t){return Pi(Mi,e,t||{})}function Ii(e,t){return Pi(Ni,e,t||{})}var Li=class{constructor(e){this.client=e,this.enroll=this._enroll.bind(this),this.challenge=this._challenge.bind(this),this.verify=this._verify.bind(this),this.authenticate=this._authenticate.bind(this),this.register=this._register.bind(this)}async _enroll(e){return this.client.mfa.enroll(Object.assign(Object.assign({},e),{factorType:`webauthn`}))}async _challenge({factorId:e,webauthn:t,friendlyName:n,signal:r},i){try{let{data:a,error:o}=await this.client.mfa.challenge({factorId:e,webauthn:t});if(!a)return{data:null,error:o};let s=r??Ci.createNewAbortSignal();if(a.webauthn.type===`create`){let{user:e}=a.webauthn.credential_options.publicKey;if(!e.name){let t=n;if(t)e.name=`${e.id}:${t}`;else{let t=(await this.client.getUser()).data.user,n=t?.user_metadata?.name||t?.email||t?.id||`User`;e.name=`${e.id}:${n}`}}e.displayName||=e.name}switch(a.webauthn.type){case`create`:{let{data:t,error:n}=await Ai({publicKey:Fi(a.webauthn.credential_options.publicKey,i?.create),signal:s});return t?{data:{factorId:e,challengeId:a.id,webauthn:{type:a.webauthn.type,credential_response:t}},error:null}:{data:null,error:n}}case`request`:{let t=Ii(a.webauthn.credential_options.publicKey,i?.request),{data:n,error:r}=await ji(Object.assign(Object.assign({},a.webauthn.credential_options),{publicKey:t,signal:s}));return n?{data:{factorId:e,challengeId:a.id,webauthn:{type:a.webauthn.type,credential_response:n}},error:null}:{data:null,error:r}}}}catch(e){return N(e)?{data:null,error:e}:{data:null,error:new P(`Unexpected error in challenge`,e)}}}async _verify({challengeId:e,factorId:t,webauthn:n}){return this.client.mfa.verify({factorId:t,challengeId:e,webauthn:n})}async _authenticate({factorId:e,webauthn:{rpId:t=typeof window<`u`?window.location.hostname:void 0,rpOrigins:n=typeof window<`u`?[window.location.origin]:void 0,signal:r}={}},i){if(!t)return{data:null,error:new Gn(`rpId is required for WebAuthn authentication`)};try{if(!ki())return{data:null,error:new P(`Browser does not support WebAuthn`,null)};let{data:a,error:o}=await this.challenge({factorId:e,webauthn:{rpId:t,rpOrigins:n},signal:r},{request:i});if(!a)return{data:null,error:o};let{webauthn:s}=a;return this._verify({factorId:e,challengeId:a.challengeId,webauthn:{type:s.type,rpId:t,rpOrigins:n,credential_response:s.credential_response}})}catch(e){return N(e)?{data:null,error:e}:{data:null,error:new P(`Unexpected error in authenticate`,e)}}}async _register({friendlyName:e,webauthn:{rpId:t=typeof window<`u`?window.location.hostname:void 0,rpOrigins:n=typeof window<`u`?[window.location.origin]:void 0,signal:r}={}},i){if(!t)return{data:null,error:new Gn(`rpId is required for WebAuthn registration`)};try{if(!ki())return{data:null,error:new P(`Browser does not support WebAuthn`,null)};let{data:a,error:o}=await this._enroll({friendlyName:e});if(!a)return await this.client.mfa.listFactors().then(t=>t.data?.all.find(t=>t.factor_type===`webauthn`&&t.friendly_name===e&&t.status!==`unverified`)).then(e=>e?this.client.mfa.unenroll({factorId:e?.id}):void 0),{data:null,error:o};let{data:s,error:c}=await this._challenge({factorId:a.id,friendlyName:a.friendly_name,webauthn:{rpId:t,rpOrigins:n},signal:r},{create:i});return s?this._verify({factorId:a.id,challengeId:s.challengeId,webauthn:{rpId:t,rpOrigins:n,type:s.webauthn.type,credential_response:s.webauthn.credential_response}}):{data:null,error:c}}catch(e){return N(e)?{data:null,error:e}:{data:null,error:new P(`Unexpected error in register`,e)}}}};hi();let Ri={url:`http://localhost:9999`,storageKey:`supabase.auth.token`,autoRefreshToken:!0,persistSession:!0,detectSessionInUrl:!0,headers:Vn,flowType:`implicit`,debug:!1,hasCustomAuthorizationHeader:!1,throwOnError:!1,lockAcquireTimeout:5e3,skipAutoInitialize:!1,experimental:{}},zi={};var Bi=class e{get jwks(){return zi[this.storageKey]?.jwks??{keys:[]}}set jwks(e){zi[this.storageKey]=Object.assign(Object.assign({},zi[this.storageKey]),{jwks:e})}get jwks_cached_at(){return zi[this.storageKey]?.cachedAt??-(2**53-1)}set jwks_cached_at(e){zi[this.storageKey]=Object.assign(Object.assign({},zi[this.storageKey]),{cachedAt:e})}constructor(t){var n;this.userStorage=null,this.memoryStorage=null,this.stateChangeEmitters=new Map,this.autoRefreshTicker=null,this.autoRefreshTickTimeout=null,this.visibilityChangedCallback=null,this.refreshingDeferred=null,this.lastRefreshFailure=null,this._sessionRemovalEpoch=0,this.initializePromise=null,this._pendingInitNotifications=null,this.detectSessionInUrl=!0,this.hasCustomAuthorizationHeader=!1,this.suppressGetSessionWarning=!1,this.lock=null,this.lockAcquired=!1,this.pendingInLock=[],this.broadcastChannel=null,this.logger=console.log;let r=Object.assign(Object.assign({},Ri),t);if(this.storageKey=r.storageKey,this.instanceID=e.nextInstanceID[this.storageKey]??0,e.nextInstanceID[this.storageKey]=this.instanceID+1,this.logDebugMessages=!!r.debug,typeof r.debug==`function`&&(this.logger=r.debug),this.instanceID>0&&B()){let e=`${this._logPrefix()} Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.`;console.warn(e),this.logDebugMessages&&console.trace(e)}if(this.persistSession=r.persistSession,this.autoRefreshToken=r.autoRefreshToken,this.experimental=r.experimental??{},this.admin=new si({url:r.url,headers:r.headers,fetch:r.fetch,experimental:this.experimental}),this.url=r.url,this.headers=r.headers,this.fetch=Sr(r.fetch),this.detectSessionInUrl=r.detectSessionInUrl,this.flowType=r.flowType,this.hasCustomAuthorizationHeader=r.hasCustomAuthorizationHeader,this.throwOnError=r.throwOnError,this.lockAcquireTimeout=r.lockAcquireTimeout,r.lock!=null&&(this.lock=r.lock),this.jwks||(this.jwks={keys:[]},this.jwks_cached_at=-(2**53-1)),this.mfa={verify:this._verify.bind(this),enroll:this._enroll.bind(this),unenroll:this._unenroll.bind(this),challenge:this._challenge.bind(this),listFactors:this._listFactors.bind(this),challengeAndVerify:this._challengeAndVerify.bind(this),getAuthenticatorAssuranceLevel:this._getAuthenticatorAssuranceLevel.bind(this),webauthn:new Li(this)},this.oauth={getAuthorizationDetails:this._getAuthorizationDetails.bind(this),approveAuthorization:this._approveAuthorization.bind(this),denyAuthorization:this._denyAuthorization.bind(this),listGrants:this._listOAuthGrants.bind(this),revokeGrant:this._revokeOAuthGrant.bind(this)},this.passkey={startRegistration:this._startPasskeyRegistration.bind(this),verifyRegistration:this._verifyPasskeyRegistration.bind(this),startAuthentication:this._startPasskeyAuthentication.bind(this),verifyAuthentication:this._verifyPasskeyAuthentication.bind(this),list:this._listPasskeys.bind(this),update:this._updatePasskey.bind(this),delete:this._deletePasskey.bind(this)},this.persistSession?(r.storage?this.storage=r.storage:br()?this.storage=globalThis.localStorage:(this.memoryStorage={},this.storage=ci(this.memoryStorage)),r.userStorage&&(this.userStorage=r.userStorage)):(this.memoryStorage={},this.storage=ci(this.memoryStorage)),B()&&globalThis.BroadcastChannel&&this.persistSession&&this.storageKey){try{this.broadcastChannel=new globalThis.BroadcastChannel(this.storageKey)}catch(e){console.error(`Failed to create a new BroadcastChannel, multi-tab state changes will not be available`,e)}(n=this.broadcastChannel)==null||n.addEventListener(`message`,async e=>{this._debug(`received broadcast notification from other tab or client`,e),(e.data.event===`TOKEN_REFRESHED`||e.data.event===`SIGNED_IN`)&&(this.lastRefreshFailure=null);try{await this._notifyAllSubscribers(e.data.event,e.data.session,!1)}catch(e){this._debug(`#broadcastChannel`,`error`,e)}})}r.skipAutoInitialize||this.initialize().catch(e=>{this._debug(`#initialize()`,`error`,e)})}isThrowOnErrorEnabled(){return this.throwOnError}_returnResult(e){if(this.throwOnError&&e&&e.error)throw e.error;return e}_logPrefix(){return`GoTrueClient@${this.storageKey}:${this.instanceID} (${zn}) ${new Date().toISOString()}`}_debug(...e){return this.logDebugMessages&&this.logger(this._logPrefix(),...e),this}async initialize(){if(this.initializePromise)return await this.initializePromise;this._pendingInitNotifications=[],this.initializePromise=(async()=>this.lock==null?await this._initialize():await this._acquireLock(this.lockAcquireTimeout,async()=>await this._initialize()))();let e=await this.initializePromise,t=this._pendingInitNotifications??[];this._pendingInitNotifications=null;for(let e of t)await this._notifyAllSubscribers(e.event,e.session,e.broadcast);return e}async _initialize(){try{let e={},t=`none`;if(B()&&(e=xr(window.location.href),this._isImplicitGrantCallback(e)?t=`implicit`:await this._isPKCECallback(e)&&(t=`pkce`)),B()&&this.detectSessionInUrl&&t!==`none`){let{data:n,error:r}=await this._getSessionFromURL(e,t);if(r){if(this._debug(`#_initialize()`,`error detecting session from URL`,r),Zn(r)){let e=r.details?.code;if(e===`identity_already_exists`||e===`identity_not_found`||e===`single_identity_not_deletable`)return{error:r}}return{error:r}}let{session:i,redirectType:a}=n;return this._debug(`#_initialize()`,`detected session in URL`,i,`redirect type`,a),await this._saveSession(i),setTimeout(async()=>{a===`recovery`?await this._notifyAllSubscribers(`PASSWORD_RECOVERY`,i):await this._notifyAllSubscribers(`SIGNED_IN`,i)},0),{error:null}}return await this._recoverAndRefresh(),{error:null}}catch(e){return N(e)?this._returnResult({error:e}):this._returnResult({error:new P(`Unexpected error during initialization`,e)})}finally{await this._handleVisibilityChange(),this._debug(`#_initialize()`,`end`)}}async signInAnonymously(e){try{let{data:t,error:n}=await Y(this.fetch,`POST`,`${this.url}/signup`,{headers:this.headers,body:{data:e?.options?.data??{},gotrue_meta_security:{captcha_token:e?.options?.captchaToken}},xform:X});if(n||!t)return this._returnResult({data:{user:null,session:null},error:n});let r=t.session,i=t.user;return t.session&&(await this._saveSession(t.session),await this._notifyAllSubscribers(`SIGNED_IN`,r)),this._returnResult({data:{user:i,session:r},error:null})}catch(e){if(N(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}}async signUp(e){let t=null;try{let n;if(`email`in e){let{email:r,password:i,options:a}=e,o=null,s=null;this.flowType===`pkce`&&([o,s,t]=await this._getCodeChallengeAndMethod()),n=await Y(this.fetch,`POST`,`${this.url}/signup`,{headers:this.headers,redirectTo:this._maybeAppendFlowIdToRedirect(a?.emailRedirectTo,t),body:{email:r,password:i,data:a?.data??{},gotrue_meta_security:{captcha_token:a?.captchaToken},code_challenge:o,code_challenge_method:s},xform:X})}else if(`phone`in e){let{phone:t,password:r,options:i}=e;n=await Y(this.fetch,`POST`,`${this.url}/signup`,{headers:this.headers,body:{phone:t,password:r,data:i?.data??{},channel:i?.channel??`sms`,gotrue_meta_security:{captcha_token:i?.captchaToken}},xform:X})}else throw new Yn(`You must provide either an email or phone number and a password`);let{data:r,error:i}=n;if(i||!r)return await G(this.storage,this.storageKey,t),this._returnResult({data:{user:null,session:null},error:i});let a=r.session,o=r.user;return r.session&&(await this._saveSession(r.session),await this._notifyAllSubscribers(`SIGNED_IN`,a)),this._returnResult({data:{user:o,session:a},error:null})}catch(e){if(await G(this.storage,this.storageKey,t),N(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}}async signInWithPassword(e){try{let t;if(`email`in e){let{email:n,password:r,options:i}=e;t=await Y(this.fetch,`POST`,`${this.url}/token?grant_type=password`,{headers:this.headers,body:{email:n,password:r,gotrue_meta_security:{captcha_token:i?.captchaToken}},xform:ti})}else if(`phone`in e){let{phone:n,password:r,options:i}=e;t=await Y(this.fetch,`POST`,`${this.url}/token?grant_type=password`,{headers:this.headers,body:{phone:n,password:r,gotrue_meta_security:{captcha_token:i?.captchaToken}},xform:ti})}else throw new Yn(`You must provide either an email or phone number and a password`);let{data:n,error:r}=t;if(r)return this._returnResult({data:{user:null,session:null},error:r});if(!n||!n.session||!n.user){let e=new L;return this._returnResult({data:{user:null,session:null},error:e})}return n.session&&(await this._saveSession(n.session),await this._notifyAllSubscribers(`SIGNED_IN`,n.session)),this._returnResult({data:Object.assign({user:n.user,session:n.session},n.weak_password?{weakPassword:n.weak_password}:null),error:r})}catch(e){if(N(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}}async signInWithOAuth(e){return await this._handleProviderSignIn(e.provider,{redirectTo:e.options?.redirectTo,scopes:e.options?.scopes,queryParams:e.options?.queryParams,skipBrowserRedirect:e.options?.skipBrowserRedirect})}async exchangeCodeForSession(e,t){return await this.initializePromise,this.lock==null?this._exchangeCodeForSession(e,t):this._acquireLock(this.lockAcquireTimeout,async()=>this._exchangeCodeForSession(e,t))}async signInWithWeb3(e){let{chain:t}=e;switch(t){case`ethereum`:return await this.signInWithEthereum(e);case`solana`:return await this.signInWithSolana(e);default:throw Error(`@supabase/auth-js: Unsupported chain "${t}"`)}}async signInWithEthereum(e){let t,n;if(`message`in e)t=e.message,n=e.signature;else{let{chain:r,wallet:i,statement:a,options:o}=e,s;if(B())if(typeof i==`object`)s=i;else{let e=window;if(`ethereum`in e&&typeof e.ethereum==`object`&&`request`in e.ethereum&&typeof e.ethereum.request==`function`)s=e.ethereum;else throw Error(`@supabase/auth-js: No compatible Ethereum wallet interface on the window object (window.ethereum) detected. Make sure the user already has a wallet installed and connected for this app. Prefer passing the wallet interface object directly to signInWithWeb3({ chain: 'ethereum', wallet: resolvedUserWallet }) instead.`)}else{if(typeof i!=`object`||!o?.url)throw Error(`@supabase/auth-js: Both wallet and url must be specified in non-browser environments.`);s=i}let c=new URL(o?.url??window.location.href),l=await s.request({method:`eth_requestAccounts`}).then(e=>e).catch(()=>{throw Error(`@supabase/auth-js: Wallet method eth_requestAccounts is missing or invalid`)});if(!l||l.length===0)throw Error(`@supabase/auth-js: No accounts available. Please ensure the wallet is connected.`);let u=gi(l[0]),d=o?.signInWithEthereum?.chainId;d||=_i(await s.request({method:`eth_chainId`})),t=yi({domain:c.host,address:u,statement:a,uri:c.href,version:`1`,chainId:d,nonce:o?.signInWithEthereum?.nonce,issuedAt:o?.signInWithEthereum?.issuedAt??new Date,expirationTime:o?.signInWithEthereum?.expirationTime,notBefore:o?.signInWithEthereum?.notBefore,requestId:o?.signInWithEthereum?.requestId,resources:o?.signInWithEthereum?.resources}),n=await s.request({method:`personal_sign`,params:[vi(t),u]})}try{let{data:r,error:i}=await Y(this.fetch,`POST`,`${this.url}/token?grant_type=web3`,{headers:this.headers,body:Object.assign({chain:`ethereum`,message:t,signature:n},e.options?.captchaToken?{gotrue_meta_security:{captcha_token:e.options?.captchaToken}}:null),xform:X});if(i)throw i;if(!r||!r.session||!r.user){let e=new L;return this._returnResult({data:{user:null,session:null},error:e})}return r.session&&(await this._saveSession(r.session),await this._notifyAllSubscribers(`SIGNED_IN`,r.session)),this._returnResult({data:Object.assign({},r),error:i})}catch(e){if(N(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}}async signInWithSolana(e){let t,n;if(`message`in e)t=e.message,n=e.signature;else{let{chain:r,wallet:i,statement:a,options:o}=e,s;if(B())if(typeof i==`object`)s=i;else{let e=window;if(`solana`in e&&typeof e.solana==`object`&&(`signIn`in e.solana&&typeof e.solana.signIn==`function`||`signMessage`in e.solana&&typeof e.solana.signMessage==`function`))s=e.solana;else throw Error(`@supabase/auth-js: No compatible Solana wallet interface on the window object (window.solana) detected. Make sure the user already has a wallet installed and connected for this app. Prefer passing the wallet interface object directly to signInWithWeb3({ chain: 'solana', wallet: resolvedUserWallet }) instead.`)}else{if(typeof i!=`object`||!o?.url)throw Error(`@supabase/auth-js: Both wallet and url must be specified in non-browser environments.`);s=i}let c=new URL(o?.url??window.location.href);if(`signIn`in s&&s.signIn){let e=await s.signIn(Object.assign(Object.assign(Object.assign({issuedAt:new Date().toISOString()},o?.signInWithSolana),{version:`1`,domain:c.host,uri:c.href}),a?{statement:a}:null)),r;if(Array.isArray(e)&&e[0]&&typeof e[0]==`object`)r=e[0];else if(e&&typeof e==`object`&&`signedMessage`in e&&`signature`in e)r=e;else throw Error(`@supabase/auth-js: Wallet method signIn() returned unrecognized value`);if(`signedMessage`in r&&`signature`in r&&(typeof r.signedMessage==`string`||r.signedMessage instanceof Uint8Array)&&r.signature instanceof Uint8Array)t=typeof r.signedMessage==`string`?r.signedMessage:new TextDecoder().decode(r.signedMessage),n=r.signature;else throw Error(`@supabase/auth-js: Wallet method signIn() API returned object without signedMessage and signature fields`)}else{if(!(`signMessage`in s)||typeof s.signMessage!=`function`||!(`publicKey`in s)||typeof s!=`object`||!s.publicKey||!(`toBase58`in s.publicKey)||typeof s.publicKey.toBase58!=`function`)throw Error(`@supabase/auth-js: Wallet does not have a compatible signMessage() and publicKey.toBase58() API`);t=[`${c.host} wants you to sign in with your Solana account:`,s.publicKey.toBase58(),...a?[``,a,``]:[``],`Version: 1`,`URI: ${c.href}`,`Issued At: ${o?.signInWithSolana?.issuedAt??new Date().toISOString()}`,...o?.signInWithSolana?.notBefore?[`Not Before: ${o.signInWithSolana.notBefore}`]:[],...o?.signInWithSolana?.expirationTime?[`Expiration Time: ${o.signInWithSolana.expirationTime}`]:[],...o?.signInWithSolana?.chainId?[`Chain ID: ${o.signInWithSolana.chainId}`]:[],...o?.signInWithSolana?.nonce?[`Nonce: ${o.signInWithSolana.nonce}`]:[],...o?.signInWithSolana?.requestId?[`Request ID: ${o.signInWithSolana.requestId}`]:[],...o?.signInWithSolana?.resources?.length?[`Resources`,...o.signInWithSolana.resources.map(e=>`- ${e}`)]:[]].join(`
 `);let e=await s.signMessage(new TextEncoder().encode(t),`utf8`);if(!e||!(e instanceof Uint8Array))throw Error(`@supabase/auth-js: Wallet signMessage() API returned an recognized value`);n=e}}try{let{data:r,error:i}=await Y(this.fetch,`POST`,`${this.url}/token?grant_type=web3`,{headers:this.headers,body:Object.assign({chain:`solana`,message:t,signature:z(n)},e.options?.captchaToken?{gotrue_meta_security:{captcha_token:e.options?.captchaToken}}:null),xform:X});if(i)throw i;if(!r||!r.session||!r.user){let e=new L;return this._returnResult({data:{user:null,session:null},error:e})}return r.session&&(await this._saveSession(r.session),await this._notifyAllSubscribers(`SIGNED_IN`,r.session)),this._returnResult({data:Object.assign({},r),error:i})}catch(e){if(N(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}}async _exchangeCodeForSession(e,t){let n=t?.flowId!=null,r=n?Nr(t?.flowId):B()?Nr(xr(window.location.href)[M]):null;n&&!r&&this._debug(`#_exchangeCodeForSession()`,`provided flowId is not a valid flow id`,t?.flowId);let{verifier:i,flowId:a}=n&&!r?{verifier:null,flowId:null}:await zr(this.storage,this.storageKey,r),[o,s]=(i??``).split(`/`);try{if(!o&&this.flowType===`pkce`)throw new $n;let{data:t,error:n}=await Y(this.fetch,`POST`,`${this.url}/token?grant_type=pkce`,{headers:this.headers,body:{auth_code:e,code_verifier:o},xform:X});if(await G(this.storage,this.storageKey,a),n)throw n;if(!t||!t.session||!t.user){let e=new L;return this._returnResult({data:{user:null,session:null,redirectType:null},error:e})}return t.session&&(await this._saveSession(t.session),await this._notifyAllSubscribers(s===`recovery`?`PASSWORD_RECOVERY`:`SIGNED_IN`,t.session)),this._returnResult({data:Object.assign(Object.assign({},t),{redirectType:s??null}),error:n})}catch(e){if(await G(this.storage,this.storageKey,a),N(e))return this._returnResult({data:{user:null,session:null,redirectType:null},error:e});throw e}}async signInWithIdToken(e){try{let{options:t,provider:n,token:r,access_token:i,nonce:a}=e,{data:o,error:s}=await Y(this.fetch,`POST`,`${this.url}/token?grant_type=id_token`,{headers:this.headers,body:{provider:n,id_token:r,access_token:i,nonce:a,gotrue_meta_security:{captcha_token:t?.captchaToken}},xform:X});if(s)return this._returnResult({data:{user:null,session:null},error:s});if(!o||!o.session||!o.user){let e=new L;return this._returnResult({data:{user:null,session:null},error:e})}return o.session&&(await this._saveSession(o.session),await this._notifyAllSubscribers(`SIGNED_IN`,o.session)),this._returnResult({data:o,error:s})}catch(e){if(N(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}}async signInWithOtp(e){let t=null;try{if(`email`in e){let{email:n,options:r}=e,i=null,a=null;this.flowType===`pkce`&&([i,a,t]=await this._getCodeChallengeAndMethod());let{error:o}=await Y(this.fetch,`POST`,`${this.url}/otp`,{headers:this.headers,body:{email:n,data:r?.data??{},create_user:r?.shouldCreateUser??!0,gotrue_meta_security:{captcha_token:r?.captchaToken},code_challenge:i,code_challenge_method:a},redirectTo:this._maybeAppendFlowIdToRedirect(r?.emailRedirectTo,t)});return this._returnResult({data:{user:null,session:null},error:o})}if(`phone`in e){let{phone:t,options:n}=e,{data:r,error:i}=await Y(this.fetch,`POST`,`${this.url}/otp`,{headers:this.headers,body:{phone:t,data:n?.data??{},create_user:n?.shouldCreateUser??!0,gotrue_meta_security:{captcha_token:n?.captchaToken},channel:n?.channel??`sms`}});return this._returnResult({data:{user:null,session:null,messageId:r?.message_id},error:i})}throw new Yn(`You must provide either an email or phone number.`)}catch(e){if(await G(this.storage,this.storageKey,t),N(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}}async verifyOtp(e){try{let t,n;`options`in e&&(t=e.options?.redirectTo,n=e.options?.captchaToken);let{data:r,error:i}=await Y(this.fetch,`POST`,`${this.url}/verify`,{headers:this.headers,body:Object.assign(Object.assign({},e),{gotrue_meta_security:{captcha_token:n}}),redirectTo:t,xform:X});if(i)throw i;if(!r)throw Error(`An error occurred on token verification.`);let a=r.session,o=r.user;return a?.access_token&&(await this._saveSession(a),await this._notifyAllSubscribers(e.type==`recovery`?`PASSWORD_RECOVERY`:`SIGNED_IN`,a)),this._returnResult({data:{user:o,session:a},error:null})}catch(e){if(N(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}}async signInWithSSO(e){let t=null;try{let n=null,r=null;this.flowType===`pkce`&&([n,r,t]=await this._getCodeChallengeAndMethod());let i=await Y(this.fetch,`POST`,`${this.url}/sso`,{body:Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({},`providerId`in e?{provider_id:e.providerId}:null),`domain`in e?{domain:e.domain}:null),{redirect_to:this._maybeAppendFlowIdToRedirect(e.options?.redirectTo,t)}),e?.options?.captchaToken?{gotrue_meta_security:{captcha_token:e.options.captchaToken}}:null),{skip_http_redirect:!0,code_challenge:n,code_challenge_method:r}),headers:this.headers,xform:ni});return i.data?.url&&B()&&!e.options?.skipBrowserRedirect&&window.location.assign(i.data.url),this._returnResult(i)}catch(e){if(await G(this.storage,this.storageKey,t),N(e))return this._returnResult({data:null,error:e});throw e}}async reauthenticate(){return await this.initializePromise,this.lock==null?await this._reauthenticate():await this._acquireLock(this.lockAcquireTimeout,async()=>await this._reauthenticate())}async _reauthenticate(){try{return await this._useSession(async e=>{let{data:{session:t},error:n}=e;if(n)throw n;if(!t)throw new I;let{error:r}=await Y(this.fetch,`GET`,`${this.url}/reauthenticate`,{headers:this.headers,jwt:t.access_token});return this._returnResult({data:{user:null,session:null},error:r})})}catch(e){if(N(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}}async resend(e){let t=null;try{let n=`${this.url}/resend`;if(`email`in e){let{email:r,type:i,options:a}=e,o=null,s=null;this.flowType===`pkce`&&([o,s,t]=await this._getCodeChallengeAndMethod());let{error:c}=await Y(this.fetch,`POST`,n,{headers:this.headers,body:{email:r,type:i,gotrue_meta_security:{captcha_token:a?.captchaToken},code_challenge:o,code_challenge_method:s},redirectTo:this._maybeAppendFlowIdToRedirect(a?.emailRedirectTo,t)});return c&&await G(this.storage,this.storageKey,t),this._returnResult({data:{user:null,session:null},error:c})}else if(`phone`in e){let{phone:t,type:r,options:i}=e,{data:a,error:o}=await Y(this.fetch,`POST`,n,{headers:this.headers,body:{phone:t,type:r,gotrue_meta_security:{captcha_token:i?.captchaToken}}});return this._returnResult({data:{user:null,session:null,messageId:a?.message_id},error:o})}throw new Yn(`You must provide either an email or phone number and a type`)}catch(e){if(await G(this.storage,this.storageKey,t),N(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}}async getSession(){return await this.initializePromise,this.lock==null?await this._useSession(async e=>e):await this._acquireLock(this.lockAcquireTimeout,async()=>this._useSession(async e=>e))}async _acquireLock(e,t){this._debug(`#_acquireLock`,`begin`,e);try{if(this.lockAcquired){let e=this.pendingInLock.length?this.pendingInLock[this.pendingInLock.length-1]:Promise.resolve(),n=(async()=>(await e,await t()))();return this.pendingInLock.push((async()=>{try{await n}catch{}})()),n}return await this.lock(`lock:${this.storageKey}`,e,async()=>{this._debug(`#_acquireLock`,`lock acquired for storage key`,this.storageKey);try{this.lockAcquired=!0;let e=t();for(this.pendingInLock.push((async()=>{try{await e}catch{}})()),await e;this.pendingInLock.length;){let e=[...this.pendingInLock];await Promise.all(e),this.pendingInLock.splice(0,e.length)}return await e}finally{this._debug(`#_acquireLock`,`lock released for storage key`,this.storageKey),this.lockAcquired=!1}})}finally{this._debug(`#_acquireLock`,`end`)}}async _useSession(e){this._debug(`#_useSession`,`begin`);try{return await e(await this.__loadSession())}finally{this._debug(`#_useSession`,`end`)}}async __loadSession(){this._debug(`#__loadSession()`,`begin`),this.lock!=null&&!this.lockAcquired&&this._debug(`#__loadSession()`,`used outside of an acquired lock!`,Error().stack);try{let e=null,t=await U(this.storage,this.storageKey);if(this._debug(`#getSession()`,`session from storage`,t),t!==null&&(this._isValidSession(t)?e=t:(this._debug(`#getSession()`,`session from storage is not valid`),await this._removeSession())),!e)return{data:{session:null},error:null};let n=e.expires_at?e.expires_at*1e3-Date.now()<Bn:!1;if(this._debug(`#__loadSession()`,`session has${n?``:` not`} expired`,`expires_at`,e.expires_at),!n){if(this.userStorage){let t=await U(this.userStorage,this.storageKey+`-user`);t?.user?e.user=t.user:e.user=Jr()}if(this.storage.isServer&&e.user&&!e.user.__isUserNotAvailableProxy){let t={value:this.suppressGetSessionWarning};e.user=Yr(e.user,t),t.value&&(this.suppressGetSessionWarning=!0)}return{data:{session:e},error:null}}let{data:r,error:i}=await this._callRefreshToken(e.refresh_token);if(i){if(e.expires_at&&e.expires_at*1e3>Date.now()){let t=await U(this.storage,this.storageKey);if(t&&t.refresh_token===e.refresh_token)return this._returnResult({data:{session:e},error:null})}return this._returnResult({data:{session:null},error:i})}return this._returnResult({data:{session:r},error:null})}finally{this._debug(`#__loadSession()`,`end`)}}async getUser(e){if(e)return await this._getUser(e);await this.initializePromise;let t;return t=this.lock==null?await this._getUser():await this._acquireLock(this.lockAcquireTimeout,async()=>await this._getUser()),t.data.user&&(this.suppressGetSessionWarning=!0),t}async _getUser(e){try{return e?await Y(this.fetch,`GET`,`${this.url}/user`,{headers:this.headers,jwt:e,xform:Z}):await this._useSession(async e=>{let{data:t,error:n}=e;if(n)throw n;return!t.session?.access_token&&!this.hasCustomAuthorizationHeader?{data:{user:null},error:new I}:await Y(this.fetch,`GET`,`${this.url}/user`,{headers:this.headers,jwt:t.session?.access_token??void 0,xform:Z})})}catch(e){if(N(e))return Jn(e)&&await this._removeSession(),this._returnResult({data:{user:null},error:e});throw e}}async updateUser(e,t={}){return await this.initializePromise,this.lock==null?await this._updateUser(e,t):await this._acquireLock(this.lockAcquireTimeout,async()=>await this._updateUser(e,t))}async _updateUser(e,t={}){let n=null;try{return await this._useSession(async r=>{let{data:i,error:a}=r;if(a)throw a;if(!i.session)throw new I;let o=i.session,s=null,c=null;this.flowType===`pkce`&&e.email!=null&&([s,c,n]=await this._getCodeChallengeAndMethod());let{data:l,error:u}=await Y(this.fetch,`PUT`,`${this.url}/user`,{headers:this.headers,redirectTo:this._maybeAppendFlowIdToRedirect(t?.emailRedirectTo,n),body:Object.assign(Object.assign({},e),{code_challenge:s,code_challenge_method:c}),jwt:o.access_token,xform:Z});if(u)throw u;return o.user=l.user,await this._saveSession(o),await this._notifyAllSubscribers(`USER_UPDATED`,o),this._returnResult({data:{user:o.user},error:null})})}catch(e){if(await G(this.storage,this.storageKey,n),N(e))return this._returnResult({data:{user:null},error:e});throw e}}async setSession(e){return await this.initializePromise,this.lock==null?await this._setSession(e):await this._acquireLock(this.lockAcquireTimeout,async()=>await this._setSession(e))}async _setSession(e){try{if(!e.access_token||!e.refresh_token)throw new I;let t=Date.now()/1e3,n=t,r=!0,i=null,{payload:a}=Tr(e.access_token);if(a.exp&&(n=a.exp,r=n<=t),r){let{data:t,error:n}=await this._callRefreshToken(e.refresh_token);if(n)return this._returnResult({data:{user:null,session:null},error:n});if(!t)return{data:{user:null,session:null},error:null};i=t}else{let{data:r,error:a}=await this._getUser(e.access_token);if(a)return this._returnResult({data:{user:null,session:null},error:a});i={access_token:e.access_token,refresh_token:e.refresh_token,user:r.user,token_type:`bearer`,expires_in:n-t,expires_at:n},await this._saveSession(i),await this._notifyAllSubscribers(`SIGNED_IN`,i)}return this._returnResult({data:{user:i.user,session:i},error:null})}catch(e){if(N(e))return this._returnResult({data:{session:null,user:null},error:e});throw e}}async refreshSession(e){return await this.initializePromise,this.lock==null?await this._refreshSession(e):await this._acquireLock(this.lockAcquireTimeout,async()=>await this._refreshSession(e))}async _refreshSession(e){try{return await this._useSession(async t=>{if(!e){let{data:n,error:r}=t;if(r)throw r;e=n.session??void 0}if(!e?.refresh_token)throw new I;let{data:n,error:r}=await this._callRefreshToken(e.refresh_token);return r?this._returnResult({data:{user:null,session:null},error:r}):n?this._returnResult({data:{user:n.user,session:n},error:null}):this._returnResult({data:{user:null,session:null},error:null})})}catch(e){if(N(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}}async _getSessionFromURL(e,t){try{if(!B())throw new Xn(`No browser detected.`);if(e.error||e.error_description||e.error_code)throw new Xn(e.error_description||`Error in URL with unspecified error_description`,{error:e.error||`unspecified_error`,code:e.error_code||`unspecified_code`});switch(t){case`implicit`:if(this.flowType===`pkce`)throw new Qn(`Not a valid PKCE flow url.`);break;case`pkce`:if(this.flowType===`implicit`)throw new Xn(`Not a valid implicit grant flow url.`);break;default:}if(t===`pkce`){if(this._debug(`#_initialize()`,`begin`,`is PKCE flow`,!0),!e.code)throw new Qn(`No code detected.`);let{data:t,error:n}=await this._exchangeCodeForSession(e.code,{flowId:e[M]});if(n)throw n;let r=new URL(window.location.href);return r.searchParams.delete(`code`),r.searchParams.delete(M),window.history.replaceState(window.history.state,``,r.toString()),{data:{session:t.session,redirectType:t.redirectType??null},error:null}}let{provider_token:n,provider_refresh_token:r,access_token:i,refresh_token:a,expires_in:o,expires_at:s,token_type:c}=e;if(!i||!o||!a||!c)throw new Xn(`No session defined in URL`);let l=Math.round(Date.now()/1e3),u=parseInt(o),d=l+u;s&&(d=parseInt(s));let f=d-l;f*1e3<=j&&console.warn(`@supabase/gotrue-js: Session as retrieved from URL expires in ${f}s, should have been closer to ${u}s`);let p=d-u;l-p>=120?console.warn(`@supabase/gotrue-js: Session as retrieved from URL was issued over 120s ago, URL could be stale`,p,d,l):l-p<0&&console.warn(`@supabase/gotrue-js: Session as retrieved from URL was issued in the future? Check the device clock for skew`,p,d,l);let{data:m,error:h}=await this._getUser(i);if(h)throw h;let g={provider_token:n,provider_refresh_token:r,access_token:i,expires_in:u,expires_at:d,refresh_token:a,token_type:c,user:m.user};return window.location.hash=``,this._debug(`#_getSessionFromURL()`,`clearing window.location.hash`),this._returnResult({data:{session:g,redirectType:e.type},error:null})}catch(e){if(N(e))return this._returnResult({data:{session:null,redirectType:null},error:e});throw e}}_isImplicitGrantCallback(e){return typeof this.detectSessionInUrl==`function`?this.detectSessionInUrl(new URL(window.location.href),e):!!(e.access_token||e.error||e.error_description||e.error_code)}async _isPKCECallback(e){if(!e.code)return!1;let t=Nr(e[M]);return t&&await U(this.storage,Fr(this.storageKey,t))?!0:!!await U(this.storage,`${this.storageKey}-code-verifier`)}async signOut(e={scope:`global`}){return await this.initializePromise,this.lock==null?await this._signOut(e):await this._acquireLock(this.lockAcquireTimeout,async()=>await this._signOut(e))}async _signOut({scope:e}={scope:`global`}){return await this._useSession(async t=>{let n=async()=>{await this._removeSession()},{data:r,error:i}=t;if(i&&!Jn(i))return this._returnResult({error:i});let a=r.session?.access_token;if(a){let{error:t}=await this.admin.signOut(a,e);if(t&&!(qn(t)&&(t.status===404||t.status===401||t.status===403)||Jn(t)))return e!==`others`&&await n(),this._returnResult({error:t})}return e!==`others`&&await n(),this._returnResult({error:null})})}onAuthStateChange(e){let t=yr(),n={id:t,callback:e,unsubscribe:()=>{this._debug(`#unsubscribe()`,`state change callback with id removed`,t),this.stateChangeEmitters.delete(t)}};return this._debug(`#onAuthStateChange()`,`registered callback with id`,t),this.stateChangeEmitters.set(t,n),(async()=>{await this.initializePromise,this.lock==null?await this._emitInitialSession(t):await this._acquireLock(this.lockAcquireTimeout,async()=>{this._emitInitialSession(t)})})(),{data:{subscription:n}}}async _emitInitialSession(e){return await this._useSession(async t=>{try{let{data:{session:n},error:r}=t;if(r)throw r;await this.stateChangeEmitters.get(e)?.callback(`INITIAL_SESSION`,n),this._debug(`INITIAL_SESSION`,`callback id`,e,`session`,n)}catch(t){await this.stateChangeEmitters.get(e)?.callback(`INITIAL_SESSION`,null),this._debug(`INITIAL_SESSION`,`callback id`,e,`error`,t),Jn(t)||nr(t)||qn(t)&&(t.code===`refresh_token_not_found`||t.code===`refresh_token_already_used`||t.code===`session_expired`)?console.warn(t):console.error(t)}})}async resetPasswordForEmail(e,t={}){let n=null,r=null,i=null;this.flowType===`pkce`&&([n,r,i]=await this._getCodeChallengeAndMethod(!0));try{return await Y(this.fetch,`POST`,`${this.url}/recover`,{body:{email:e,code_challenge:n,code_challenge_method:r,gotrue_meta_security:{captcha_token:t.captchaToken}},headers:this.headers,redirectTo:this._maybeAppendFlowIdToRedirect(t.redirectTo,i)})}catch(e){if(await G(this.storage,this.storageKey,i),N(e))return this._returnResult({data:null,error:e});throw e}}async getUserIdentities(){try{let{data:e,error:t}=await this.getUser();if(t)throw t;return this._returnResult({data:{identities:e.user.identities??[]},error:null})}catch(e){if(N(e))return this._returnResult({data:null,error:e});throw e}}async linkIdentity(e){return`token`in e?this.linkIdentityIdToken(e):this.linkIdentityOAuth(e)}async linkIdentityOAuth(e){let t=null;try{let{data:n,error:r}=await this._useSession(async n=>{let{data:r,error:i}=n;if(i)throw i;let{url:a,flowId:o}=await this._getUrlForProvider(`${this.url}/user/identities/authorize`,e.provider,{redirectTo:e.options?.redirectTo,scopes:e.options?.scopes,queryParams:e.options?.queryParams,skipBrowserRedirect:!0});return t=o,await Y(this.fetch,`GET`,a,{headers:this.headers,jwt:r.session?.access_token??void 0})});if(r)throw r;return B()&&!e.options?.skipBrowserRedirect&&window.location.assign(n?.url),this._returnResult({data:{provider:e.provider,url:n?.url,flowId:t},error:null})}catch(n){if(N(n))return this._returnResult({data:{provider:e.provider,url:null,flowId:t},error:n});throw n}}async linkIdentityIdToken(e){return await this._useSession(async t=>{try{let{error:n,data:{session:r}}=t;if(n)throw n;let{options:i,provider:a,token:o,access_token:s,nonce:c}=e,{data:l,error:u}=await Y(this.fetch,`POST`,`${this.url}/token?grant_type=id_token`,{headers:this.headers,jwt:r?.access_token??void 0,body:{provider:a,id_token:o,access_token:s,nonce:c,link_identity:!0,gotrue_meta_security:{captcha_token:i?.captchaToken}},xform:X});return u?this._returnResult({data:{user:null,session:null},error:u}):!l||!l.session||!l.user?this._returnResult({data:{user:null,session:null},error:new L}):(l.session&&(await this._saveSession(l.session),await this._notifyAllSubscribers(`USER_UPDATED`,l.session)),this._returnResult({data:l,error:u}))}catch(e){if(await G(this.storage,this.storageKey,null),N(e))return this._returnResult({data:{user:null,session:null},error:e});throw e}})}async unlinkIdentity(e){try{return await this._useSession(async t=>{let{data:n,error:r}=t;if(r)throw r;return await Y(this.fetch,`DELETE`,`${this.url}/user/identities/${e.identity_id}`,{headers:this.headers,jwt:n.session?.access_token??void 0})})}catch(e){if(N(e))return this._returnResult({data:null,error:e});throw e}}async _refreshAccessToken(e){let t=`#_refreshAccessToken()`;this._debug(t,`begin`);try{let n=Date.now();return await Dr(async n=>(n>0&&await Er(200*2**(n-1)),this._debug(t,`refreshing attempt`,n),await Y(this.fetch,`POST`,`${this.url}/token?grant_type=refresh_token`,{body:{refresh_token:e},headers:this.headers,xform:X})),(e,t)=>{let r=200*2**e;return t&&nr(t)&&Date.now()+r-n<j})}catch(e){if(this._debug(t,`error`,e),N(e))return this._returnResult({data:{session:null,user:null},error:e});throw e}finally{this._debug(t,`end`)}}_isValidSession(e){return typeof e==`object`&&!!e&&`access_token`in e&&`refresh_token`in e&&`expires_at`in e}async _handleProviderSignIn(e,t){let{url:n,flowId:r}=await this._getUrlForProvider(`${this.url}/authorize`,e,{redirectTo:t.redirectTo,scopes:t.scopes,queryParams:t.queryParams});return this._debug(`#_handleProviderSignIn()`,`provider`,e,`options`,t,`url`,n),B()&&!t.skipBrowserRedirect&&window.location.assign(n),{data:{provider:e,url:n,flowId:r},error:null}}async _recoverAndRefresh(){let e=`#_recoverAndRefresh()`;this._debug(e,`begin`);try{let t=await U(this.storage,this.storageKey);if(t&&this.userStorage){let e=await U(this.userStorage,this.storageKey+`-user`);!this.storage.isServer&&Object.is(this.storage,this.userStorage)&&!e&&(e={user:t.user},await H(this.userStorage,this.storageKey+`-user`,e)),t.user=e?.user??Jr()}else if(t&&!t.user&&!t.user){let e=await U(this.storage,this.storageKey+`-user`);e&&e?.user?(t.user=e.user,await W(this.storage,this.storageKey+`-user`),await H(this.storage,this.storageKey,t)):t.user=Jr()}if(this._debug(e,`session from storage`,t),!this._isValidSession(t)){this._debug(e,`session is not valid`),t!==null&&await this._removeSession();return}let n=(t.expires_at??1/0)*1e3-Date.now()<Bn;if(this._debug(e,`session has${n?``:` not`} expired with margin of ${Bn}s`),n){if(this.autoRefreshToken&&t.refresh_token){let{error:n}=await this._callRefreshToken(t.refresh_token);n&&(ir(n)?this._debug(e,`refresh discarded by commit guard`,n):this._debug(e,`refresh failed`,n))}}else if(t.user&&t.user.__isUserNotAvailableProxy===!0)try{let{data:n,error:r}=await this._getUser(t.access_token);!r&&n?.user?(t.user=n.user,await this._saveSession(t),await this._notifyAllSubscribers(`SIGNED_IN`,t)):this._debug(e,`could not get user data, skipping SIGNED_IN notification`)}catch(t){console.error(`Error getting user data:`,t),this._debug(e,`error getting user data, skipping SIGNED_IN notification`,t)}else await this._notifyAllSubscribers(`SIGNED_IN`,t)}catch(t){this._debug(e,`error`,t),nr(t)?console.warn(t):console.error(t);return}finally{this._debug(e,`end`)}}async _callRefreshToken(e){var t,n;if(!e)throw new I;if(this.refreshingDeferred)return this.refreshingDeferred.promise;if(this.lastRefreshFailure&&this.lastRefreshFailure.refreshToken===e&&Date.now()<this.lastRefreshFailure.expiresAt)return this._debug(`#_callRefreshToken()`,`returning cached failure (cooldown active)`),this.lastRefreshFailure.result;let r=`#_callRefreshToken()`;this._debug(r,`begin`);try{this.refreshingDeferred=new wr;let t=await U(this.storage,this.storageKey),{data:n,error:i}=await this._refreshAccessToken(e);if(i)throw i;if(!n.session)throw new I;let a=await U(this.storage,this.storageKey);if(t!==null&&(a===null||a.refresh_token!==t.refresh_token)){this._debug(r,`commit guard: storage changed since refresh started, discarding rotated tokens`,{startedWith:`present`,nowHolds:a?`replaced`:`cleared`});let e={data:null,error:new rr};return this.refreshingDeferred.resolve(e),e}let o=this._sessionRemovalEpoch;if(await this._saveSession(n.session),this._sessionRemovalEpoch!==o){this._debug(r,`commit guard (post-save): _removeSession ran during _saveSession, undoing write`),await W(this.storage,this.storageKey),this.userStorage&&await W(this.userStorage,this.storageKey+`-user`);let e={data:null,error:new rr};return this.refreshingDeferred.resolve(e),e}await this._notifyAllSubscribers(`TOKEN_REFRESHED`,n.session);let s={data:n.session,error:null};return this.lastRefreshFailure=null,this.refreshingDeferred.resolve(s),s}catch(i){if(this._debug(r,`error`,i),N(i)){let n={data:null,error:i};if(!nr(i)){let e=await U(this.storage,this.storageKey);e?.expires_at&&e.expires_at*1e3>Date.now()?this._debug(r,`proactive refresh failed, access token still valid — preserving session`):await this._removeSession()}return this.lastRefreshFailure={refreshToken:e,result:n,expiresAt:Date.now()+6e4},(t=this.refreshingDeferred)==null||t.resolve(n),n}throw(n=this.refreshingDeferred)==null||n.reject(i),i}finally{this.refreshingDeferred=null,this._debug(r,`end`)}}async _notifyAllSubscribers(e,t,n=!0){if(this._pendingInitNotifications!==null&&n){this._pendingInitNotifications.push({event:e,session:t,broadcast:n});return}let r=`#_notifyAllSubscribers(${e})`;this._debug(r,`begin`,t,`broadcast = ${n}`);try{this.broadcastChannel&&n&&this.broadcastChannel.postMessage({event:e,session:t});let r=[],i=Array.from(this.stateChangeEmitters.values()).map(async n=>{try{await n.callback(e,t)}catch(e){r.push(e)}});if(await Promise.all(i),r.length>0){for(let e=0;e<r.length;e+=1)console.error(r[e]);throw r[0]}}finally{this._debug(r,`end`)}}async _saveSession(e){this._debug(`#_saveSession()`,e),this.suppressGetSessionWarning=!0;let t=Object.assign({},e),n=t.user&&t.user.__isUserNotAvailableProxy===!0;if(this.userStorage){!n&&t.user&&await H(this.userStorage,this.storageKey+`-user`,{user:t.user});let e=Object.assign({},t);delete e.user;let r=Xr(e);await H(this.storage,this.storageKey,r)}else{let e=Xr(t);await H(this.storage,this.storageKey,e)}}async _removeSession(){this._sessionRemovalEpoch+=1,this._debug(`#_removeSession()`),this.lastRefreshFailure=null,this.suppressGetSessionWarning=!1,await W(this.storage,this.storageKey),await Br(this.storage,this.storageKey),await W(this.storage,this.storageKey+`-user`),this.userStorage&&await W(this.userStorage,this.storageKey+`-user`),await this._notifyAllSubscribers(`SIGNED_OUT`,null)}_removeVisibilityChangedCallback(){this._debug(`#_removeVisibilityChangedCallback()`);let e=this.visibilityChangedCallback;this.visibilityChangedCallback=null;try{e&&B()&&window!=null&&window.removeEventListener&&window.removeEventListener(`visibilitychange`,e)}catch(e){console.error(`removing visibilitychange callback failed`,e)}}async _startAutoRefresh(){await this._stopAutoRefresh(),this._debug(`#_startAutoRefresh()`);let e=setInterval(()=>this._autoRefreshTokenTick(),j);this.autoRefreshTicker=e,e&&typeof e==`object`&&typeof e.unref==`function`?e.unref():typeof Deno<`u`&&typeof Deno.unrefTimer==`function`&&Deno.unrefTimer(e);let t=setTimeout(async()=>{await this.initializePromise,await this._autoRefreshTokenTick()},0);this.autoRefreshTickTimeout=t,t&&typeof t==`object`&&typeof t.unref==`function`?t.unref():typeof Deno<`u`&&typeof Deno.unrefTimer==`function`&&Deno.unrefTimer(t)}async _stopAutoRefresh(){this._debug(`#_stopAutoRefresh()`);let e=this.autoRefreshTicker;this.autoRefreshTicker=null,e&&clearInterval(e);let t=this.autoRefreshTickTimeout;this.autoRefreshTickTimeout=null,t&&clearTimeout(t)}async startAutoRefresh(){this._removeVisibilityChangedCallback(),await this._startAutoRefresh()}async stopAutoRefresh(){this._removeVisibilityChangedCallback(),await this._stopAutoRefresh()}async dispose(){var e;this._removeVisibilityChangedCallback(),await this._stopAutoRefresh(),(e=this.broadcastChannel)==null||e.close(),this.broadcastChannel=null,this.stateChangeEmitters.clear()}async _autoRefreshTokenTick(){if(this._debug(`#_autoRefreshTokenTick()`,`begin`),this.lock!=null){try{await this._acquireLock(0,async()=>{try{let e=Date.now();try{return await this._useSession(async t=>{let{data:{session:n}}=t;if(!n||!n.refresh_token||!n.expires_at){this._debug(`#_autoRefreshTokenTick()`,`no session`);return}let r=Math.floor((n.expires_at*1e3-e)/j);this._debug(`#_autoRefreshTokenTick()`,`access token expires in ${r} ticks, a tick lasts ${j}ms, refresh threshold is 3 ticks`),r<=3&&await this._callRefreshToken(n.refresh_token)})}catch(e){console.error(`Auto refresh tick failed with error. This is likely a transient error.`,e)}}finally{this._debug(`#_autoRefreshTokenTick()`,`end`)}})}catch(e){if(e instanceof li)this._debug(`auto refresh token tick lock not available`);else throw e}return}if(this.refreshingDeferred!==null){this._debug(`#_autoRefreshTokenTick()`,`refresh already in flight, skipping`);return}try{let e=Date.now();try{await this._useSession(async t=>{let{data:{session:n}}=t;if(!n||!n.refresh_token||!n.expires_at){this._debug(`#_autoRefreshTokenTick()`,`no session`);return}let r=Math.floor((n.expires_at*1e3-e)/j);this._debug(`#_autoRefreshTokenTick()`,`access token expires in ${r} ticks, a tick lasts ${j}ms, refresh threshold is 3 ticks`),r<=3&&await this._callRefreshToken(n.refresh_token)})}catch(e){console.error(`Auto refresh tick failed with error. This is likely a transient error.`,e)}}finally{this._debug(`#_autoRefreshTokenTick()`,`end`)}}async _handleVisibilityChange(){if(this._debug(`#_handleVisibilityChange()`),!B()||!(window!=null&&window.addEventListener))return this.autoRefreshToken&&this.startAutoRefresh(),!1;try{this.visibilityChangedCallback=async()=>{try{await this._onVisibilityChanged(!1)}catch(e){this._debug(`#visibilityChangedCallback`,`error`,e)}},window==null||window.addEventListener(`visibilitychange`,this.visibilityChangedCallback),await this._onVisibilityChanged(!0)}catch(e){console.error(`_handleVisibilityChange`,e)}}async _onVisibilityChanged(e){let t=`#_onVisibilityChanged(${e})`;if(this._debug(t,`visibilityState`,document.visibilityState),document.visibilityState===`visible`){if(this.autoRefreshToken&&this._startAutoRefresh(),!e)if(await this.initializePromise,this.lock!=null)await this._acquireLock(this.lockAcquireTimeout,async()=>{if(document.visibilityState!==`visible`){this._debug(t,`acquired the lock to recover the session, but the browser visibilityState is no longer visible, aborting`);return}await this._recoverAndRefresh()});else{if(document.visibilityState!==`visible`){this._debug(t,`visibilityState is no longer visible, skipping recovery`);return}await this._recoverAndRefresh()}}else document.visibilityState===`hidden`&&this.autoRefreshToken&&this._stopAutoRefresh()}async _getUrlForProvider(e,t,n){let r=n?.redirectTo,i=null,a=null,o=null;this.flowType===`pkce`&&([i,a,o]=await this._getCodeChallengeAndMethod(),r=this._maybeAppendFlowIdToRedirect(r,o));let s=[`provider=${encodeURIComponent(t)}`];if(r&&s.push(`redirect_to=${encodeURIComponent(r)}`),n?.scopes&&s.push(`scopes=${encodeURIComponent(n.scopes)}`),i!=null&&a!=null){let e=new URLSearchParams({code_challenge:`${encodeURIComponent(i)}`,code_challenge_method:`${encodeURIComponent(a)}`});s.push(e.toString())}if(n?.queryParams){let e=new URLSearchParams(n.queryParams);s.push(e.toString())}return n?.skipBrowserRedirect&&s.push(`skip_http_redirect=${n.skipBrowserRedirect}`),{url:`${e}?${s.join(`&`)}`,flowId:o}}_maybeAppendFlowIdToRedirect(e,t){return!e||!t||!this.experimental.appendPkceFlowIdToRedirects?e??void 0:Vr(e,t)}async _getCodeChallengeAndMethod(e=!1){return Hr(this.storage,this.storageKey,e,e=>this._debug(`#_getCodeChallengeAndMethod()`,`evicted oldest pending PKCE verifier slot`,e))}async _unenroll(e){try{return await this._useSession(async t=>{let{data:n,error:r}=t;return r?this._returnResult({data:null,error:r}):await Y(this.fetch,`DELETE`,`${this.url}/factors/${e.factorId}`,{headers:this.headers,jwt:n?.session?.access_token})})}catch(e){if(N(e))return this._returnResult({data:null,error:e});throw e}}async _enroll(e){try{return await this._useSession(async t=>{let{data:n,error:r}=t;if(r)return this._returnResult({data:null,error:r});let i=Object.assign({friendly_name:e.friendlyName,factor_type:e.factorType},e.factorType===`phone`?{phone:e.phone}:e.factorType===`totp`?{issuer:e.issuer}:{}),{data:a,error:o}=await Y(this.fetch,`POST`,`${this.url}/factors`,{body:i,headers:this.headers,jwt:n?.session?.access_token});return o?this._returnResult({data:null,error:o}):(e.factorType===`totp`&&a.type===`totp`&&a?.totp?.qr_code&&(a.totp.qr_code=`data:image/svg+xml;utf-8,${a.totp.qr_code}`),this._returnResult({data:a,error:null}))})}catch(e){if(N(e))return this._returnResult({data:null,error:e});throw e}}async _verify(e){let t=async()=>{try{return await this._useSession(async t=>{let{data:n,error:r}=t;if(r)return this._returnResult({data:null,error:r});let i=Object.assign({challenge_id:e.challengeId},`webauthn`in e?{webauthn:Object.assign(Object.assign({},e.webauthn),{credential_response:e.webauthn.type===`create`?Ei(e.webauthn.credential_response):Di(e.webauthn.credential_response)})}:{code:e.code}),{data:a,error:o}=await Y(this.fetch,`POST`,`${this.url}/factors/${e.factorId}/verify`,{body:i,headers:this.headers,jwt:n?.session?.access_token});return o?this._returnResult({data:null,error:o}):(await this._saveSession(Object.assign({expires_at:Math.round(Date.now()/1e3)+a.expires_in},a)),await this._notifyAllSubscribers(`MFA_CHALLENGE_VERIFIED`,a),this._returnResult({data:a,error:o}))})}catch(e){if(N(e))return this._returnResult({data:null,error:e});throw e}};return this.lock==null?t():this._acquireLock(this.lockAcquireTimeout,t)}async _challenge(e){let t=async()=>{try{return await this._useSession(async t=>{let{data:n,error:r}=t;if(r)return this._returnResult({data:null,error:r});let i=await Y(this.fetch,`POST`,`${this.url}/factors/${e.factorId}/challenge`,{body:e,headers:this.headers,jwt:n?.session?.access_token});if(i.error)return i;let{data:a}=i;if(a.type!==`webauthn`)return{data:a,error:null};switch(a.webauthn.type){case`create`:return{data:Object.assign(Object.assign({},a),{webauthn:Object.assign(Object.assign({},a.webauthn),{credential_options:Object.assign(Object.assign({},a.webauthn.credential_options),{publicKey:wi(a.webauthn.credential_options.publicKey)})})}),error:null};case`request`:return{data:Object.assign(Object.assign({},a),{webauthn:Object.assign(Object.assign({},a.webauthn),{credential_options:Object.assign(Object.assign({},a.webauthn.credential_options),{publicKey:Ti(a.webauthn.credential_options.publicKey)})})}),error:null}}})}catch(e){if(N(e))return this._returnResult({data:null,error:e});throw e}};return this.lock==null?t():this._acquireLock(this.lockAcquireTimeout,t)}async _challengeAndVerify(e){let{data:t,error:n}=await this._challenge({factorId:e.factorId});return n?this._returnResult({data:null,error:n}):await this._verify({factorId:e.factorId,challengeId:t.id,code:e.code})}async _listFactors(){let{data:{user:e},error:t}=await this.getUser();if(t)return{data:null,error:t};let n={all:[],phone:[],totp:[],webauthn:[]};for(let t of e?.factors??[])n.all.push(t),t.status===`verified`&&n[t.factor_type].push(t);return{data:n,error:null}}async _getAuthenticatorAssuranceLevel(e){if(e)try{let{payload:t}=Tr(e),n=null;t.aal&&(n=t.aal);let r=n,{data:{user:i},error:a}=await this.getUser(e);if(a)return this._returnResult({data:null,error:a});((i?.factors)?.filter(e=>e.status===`verified`)??[]).length>0&&(r=`aal2`);let o=t.amr||[];return{data:{currentLevel:n,nextLevel:r,currentAuthenticationMethods:o},error:null}}catch(e){if(N(e))return this._returnResult({data:null,error:e});throw e}let{data:{session:t},error:n}=await this.getSession();if(n)return this._returnResult({data:null,error:n});if(!t)return{data:{currentLevel:null,nextLevel:null,currentAuthenticationMethods:[]},error:null};let{payload:r}=Tr(t.access_token),i=null;r.aal&&(i=r.aal);let a=i;(t.user.factors?.filter(e=>e.status===`verified`)??[]).length>0&&(a=`aal2`);let o=r.amr||[];return{data:{currentLevel:i,nextLevel:a,currentAuthenticationMethods:o},error:null}}async _getAuthorizationDetails(e){try{return await this._useSession(async t=>{let{data:{session:n},error:r}=t;return r?this._returnResult({data:null,error:r}):n?await Y(this.fetch,`GET`,`${this.url}/oauth/authorizations/${e}`,{headers:this.headers,jwt:n.access_token,xform:e=>({data:e,error:null})}):this._returnResult({data:null,error:new I})})}catch(e){if(N(e))return this._returnResult({data:null,error:e});throw e}}async _approveAuthorization(e,t){try{return await this._useSession(async n=>{let{data:{session:r},error:i}=n;if(i)return this._returnResult({data:null,error:i});if(!r)return this._returnResult({data:null,error:new I});let a=await Y(this.fetch,`POST`,`${this.url}/oauth/authorizations/${e}/consent`,{headers:this.headers,jwt:r.access_token,body:{action:`approve`},xform:e=>({data:e,error:null})});return a.data&&a.data.redirect_url&&B()&&!t?.skipBrowserRedirect&&window.location.assign(a.data.redirect_url),a})}catch(e){if(N(e))return this._returnResult({data:null,error:e});throw e}}async _denyAuthorization(e,t){try{return await this._useSession(async n=>{let{data:{session:r},error:i}=n;if(i)return this._returnResult({data:null,error:i});if(!r)return this._returnResult({data:null,error:new I});let a=await Y(this.fetch,`POST`,`${this.url}/oauth/authorizations/${e}/consent`,{headers:this.headers,jwt:r.access_token,body:{action:`deny`},xform:e=>({data:e,error:null})});return a.data&&a.data.redirect_url&&B()&&!t?.skipBrowserRedirect&&window.location.assign(a.data.redirect_url),a})}catch(e){if(N(e))return this._returnResult({data:null,error:e});throw e}}async _listOAuthGrants(){try{return await this._useSession(async e=>{let{data:{session:t},error:n}=e;return n?this._returnResult({data:null,error:n}):t?await Y(this.fetch,`GET`,`${this.url}/user/oauth/grants`,{headers:this.headers,jwt:t.access_token,xform:e=>({data:e,error:null})}):this._returnResult({data:null,error:new I})})}catch(e){if(N(e))return this._returnResult({data:null,error:e});throw e}}async _revokeOAuthGrant(e){try{return await this._useSession(async t=>{let{data:{session:n},error:r}=t;return r?this._returnResult({data:null,error:r}):n?(await Y(this.fetch,`DELETE`,`${this.url}/user/oauth/grants`,{headers:this.headers,jwt:n.access_token,query:{client_id:e.clientId},noResolveJson:!0}),{data:{},error:null}):this._returnResult({data:null,error:new I})})}catch(e){if(N(e))return this._returnResult({data:null,error:e});throw e}}async fetchJwk(e,t={keys:[]}){let n=t.keys.find(t=>t.kid===e);if(n)return n;let r=Date.now();if(n=this.jwks.keys.find(t=>t.kid===e),n&&this.jwks_cached_at+6e5>r)return n;let{data:i,error:a}=await Y(this.fetch,`GET`,`${this.url}/.well-known/jwks.json`,{headers:this.headers});if(a)throw a;return!i.keys||i.keys.length===0||(this.jwks=i,this.jwks_cached_at=r,n=i.keys.find(t=>t.kid===e),!n)?null:n}async getClaims(e,t={}){try{let n=e;if(!n){let{data:e,error:t}=await this.getSession();if(t||!e.session)return this._returnResult({data:null,error:t});n=e.session.access_token}let{header:r,payload:i,signature:a,raw:{header:o,payload:s}}=Tr(n);if(!t?.allowExpired)try{Gr(i.exp)}catch(e){throw new sr(e instanceof Error?e.message:`JWT validation failed`)}let c=!r.alg||r.alg.startsWith(`HS`)||!r.kid||!(`crypto`in globalThis&&`subtle`in globalThis.crypto)?null:await this.fetchJwk(r.kid,t?.keys?{keys:t.keys}:t?.jwks);if(!c){let{error:e}=await this.getUser(n);if(e)throw e;return{data:{claims:i,header:r,signature:a},error:null}}let l=Kr(r.alg),u=await crypto.subtle.importKey(`jwk`,c,l,!0,[`verify`]);if(!await crypto.subtle.verify(l,u,a,_r(`${o}.${s}`)))throw new sr(`Invalid JWT signature`);return{data:{claims:i,header:r,signature:a},error:null}}catch(e){if(N(e))return this._returnResult({data:null,error:e});throw e}}async signInWithPasskey(e){q(this.experimental);try{if(!ki())return this._returnResult({data:null,error:new P(`Browser does not support WebAuthn`,null)});let{data:t,error:n}=await this._startPasskeyAuthentication({options:{captchaToken:e?.options?.captchaToken}});if(n||!t)return this._returnResult({data:null,error:n});let{data:r,error:i}=await ji({publicKey:Ti(t.options),signal:e?.options?.signal??Ci.createNewAbortSignal()});if(i||!r)return this._returnResult({data:null,error:i??new P(`WebAuthn ceremony failed`,null)});let a=Di(r);return this._verifyPasskeyAuthentication({challengeId:t.challenge_id,credential:a})}catch(e){if(N(e))return this._returnResult({data:null,error:e});throw e}}async registerPasskey(e){q(this.experimental);try{if(!ki())return this._returnResult({data:null,error:new P(`Browser does not support WebAuthn`,null)});let{data:t,error:n}=await this._startPasskeyRegistration();if(n||!t)return this._returnResult({data:null,error:n});let{data:r,error:i}=await Ai({publicKey:wi(t.options),signal:e?.options?.signal??Ci.createNewAbortSignal()});if(i||!r)return this._returnResult({data:null,error:i??new P(`WebAuthn ceremony failed`,null)});let a=Ei(r);return this._verifyPasskeyRegistration({challengeId:t.challenge_id,credential:a})}catch(e){if(N(e))return this._returnResult({data:null,error:e});throw e}}async _startPasskeyRegistration(){q(this.experimental);try{return await this._useSession(async e=>{let{data:{session:t},error:n}=e;if(n)return this._returnResult({data:null,error:n});if(!t)return this._returnResult({data:null,error:new I});let{data:r,error:i}=await Y(this.fetch,`POST`,`${this.url}/passkeys/registration/options`,{headers:this.headers,jwt:t.access_token,body:{}});return i?this._returnResult({data:null,error:i}):this._returnResult({data:r,error:null})})}catch(e){if(N(e))return this._returnResult({data:null,error:e});throw e}}async _verifyPasskeyRegistration(e){q(this.experimental);try{return await this._useSession(async t=>{let{data:{session:n},error:r}=t;if(r)return this._returnResult({data:null,error:r});if(!n)return this._returnResult({data:null,error:new I});let{data:i,error:a}=await Y(this.fetch,`POST`,`${this.url}/passkeys/registration/verify`,{headers:this.headers,jwt:n.access_token,body:{challenge_id:e.challengeId,credential:e.credential}});return a?this._returnResult({data:null,error:a}):this._returnResult({data:i,error:null})})}catch(e){if(N(e))return this._returnResult({data:null,error:e});throw e}}async _startPasskeyAuthentication(e){q(this.experimental);try{let{data:t,error:n}=await Y(this.fetch,`POST`,`${this.url}/passkeys/authentication/options`,{headers:this.headers,body:{gotrue_meta_security:{captcha_token:e?.options?.captchaToken}}});return n?this._returnResult({data:null,error:n}):this._returnResult({data:t,error:null})}catch(e){if(N(e))return this._returnResult({data:null,error:e});throw e}}async _verifyPasskeyAuthentication(e){q(this.experimental);try{let{data:t,error:n}=await Y(this.fetch,`POST`,`${this.url}/passkeys/authentication/verify`,{headers:this.headers,body:{challenge_id:e.challengeId,credential:e.credential},xform:X});return n?this._returnResult({data:null,error:n}):(t.session&&(await this._saveSession(t.session),await this._notifyAllSubscribers(`SIGNED_IN`,t.session)),this._returnResult({data:t,error:null}))}catch(e){if(N(e))return this._returnResult({data:null,error:e});throw e}}async _listPasskeys(){q(this.experimental);try{return await this._useSession(async e=>{let{data:{session:t},error:n}=e;if(n)return this._returnResult({data:null,error:n});if(!t)return this._returnResult({data:null,error:new I});let{data:r,error:i}=await Y(this.fetch,`GET`,`${this.url}/passkeys`,{headers:this.headers,jwt:t.access_token,xform:e=>({data:e,error:null})});return i?this._returnResult({data:null,error:i}):this._returnResult({data:r,error:null})})}catch(e){if(N(e))return this._returnResult({data:null,error:e});throw e}}async _updatePasskey(e){q(this.experimental);try{return await this._useSession(async t=>{let{data:{session:n},error:r}=t;if(r)return this._returnResult({data:null,error:r});if(!n)return this._returnResult({data:null,error:new I});let{data:i,error:a}=await Y(this.fetch,`PATCH`,`${this.url}/passkeys/${e.passkeyId}`,{headers:this.headers,jwt:n.access_token,body:{friendly_name:e.friendlyName}});return a?this._returnResult({data:null,error:a}):this._returnResult({data:i,error:null})})}catch(e){if(N(e))return this._returnResult({data:null,error:e});throw e}}async _deletePasskey(e){q(this.experimental);try{return await this._useSession(async t=>{let{data:{session:n},error:r}=t;if(r)return this._returnResult({data:null,error:r});if(!n)return this._returnResult({data:null,error:new I});let{error:i}=await Y(this.fetch,`DELETE`,`${this.url}/passkeys/${e.passkeyId}`,{headers:this.headers,jwt:n.access_token,noResolveJson:!0});return i?this._returnResult({data:null,error:i}):this._returnResult({data:null,error:null})})}catch(e){if(N(e))return this._returnResult({data:null,error:e});throw e}}};Bi.nextInstanceID={};var Vi=Bi,Hi=si,Ui=Vi,Wi=class extends Ui{constructor(e){super(e)}},Gi=class{constructor(e,t,n){this.supabaseUrl=e,this.supabaseKey=t;let r=Rn(e);if(!t)throw Error(`supabaseKey is required.`);Mn(t),this.realtimeUrl=new URL(`realtime/v1`,r),this.realtimeUrl.protocol=this.realtimeUrl.protocol.replace(`http`,`ws`),this.authUrl=new URL(`auth/v1`,r),this.storageUrl=new URL(`storage/v1`,r),this.functionsUrl=new URL(`functions/v1`,r);let i=`sb-${r.hostname.split(`.`)[0]}-auth-token`,a={db:_n,realtime:yn,auth:{...vn,storageKey:i},global:gn,tracePropagation:bn},o=Ln(n??{},a);this.settings=o,this.storageKey=o.auth.storageKey??``,this.headers=o.global.headers??{},o.accessToken?(this.accessToken=o.accessToken,this.auth=new Proxy({},{get:(e,t)=>{throw Error(`@supabase/supabase-js: Supabase Client is configured with the accessToken option, accessing supabase.auth.${String(t)} is not possible`)}})):this.auth=this._initSupabaseAuthClient(o.auth??{},this.headers,o.global.fetch),this.fetch=Nn(t,e,this._getSessionToken.bind(this),o.global.fetch,o.tracePropagation),this.functionsFetch=Nn(t,e,this._getSessionToken.bind(this),o.global.fetch,o.tracePropagation,{omitApiKeyAsBearer:!0}),this.realtime=this._initRealtimeClient({headers:this.headers,accessToken:this._getAccessToken.bind(this),fetch:this.fetch,...o.realtime}),this.accessToken&&Promise.resolve(this.accessToken()).then(e=>this.realtime.setAuth(e)).catch(e=>console.warn(`Failed to set initial Realtime auth token:`,e)),this.rest=new ce(new URL(`rest/v1`,r).href,{headers:this.headers,schema:o.db.schema,fetch:this.fetch,timeout:o.db.timeout,urlLengthLimit:o.db.urlLengthLimit}),this.storage=new fn(this.storageUrl.href,this.headers,this.fetch,n?.storage),o.accessToken||this._listenForAuthEvents()}get functions(){return new l(this.functionsUrl.href,{headers:this.headers,customFetch:this.functionsFetch})}from(e){return this.rest.from(e)}schema(e){return this.rest.schema(e)}rpc(e,t={},n={head:!1,get:!1,count:void 0}){return this.rest.rpc(e,t,n)}channel(e,t={config:{}}){return this.realtime.channel(e,t)}getChannels(){return this.realtime.getChannels()}removeChannel(e){return this.realtime.removeChannel(e)}removeAllChannels(){return this.realtime.removeAllChannels()}async _getSessionToken(){if(this.accessToken)return await this.accessToken();let{data:e}=await this.auth.getSession();return e.session?.access_token??null}async _getAccessToken(){return await this._getSessionToken()??this.supabaseKey}_initSupabaseAuthClient({autoRefreshToken:e,persistSession:t,detectSessionInUrl:n,storage:r,userStorage:i,storageKey:a,flowType:o,lock:s,debug:c,throwOnError:l,experimental:u,lockAcquireTimeout:d,skipAutoInitialize:f},p,m){let h={Authorization:`Bearer ${this.supabaseKey}`,apikey:`${this.supabaseKey}`};return new Wi({url:this.authUrl.href,headers:{...h,...p},storageKey:a,autoRefreshToken:e,persistSession:t,detectSessionInUrl:n,storage:r,userStorage:i,flowType:o,lock:s,debug:c,throwOnError:l,experimental:u,fetch:m,lockAcquireTimeout:d,skipAutoInitialize:f,hasCustomAuthorizationHeader:Object.keys(this.headers).some(e=>e.toLowerCase()===`authorization`)})}_initRealtimeClient(e){return new mt(this.realtimeUrl.href,{...e,params:{apikey:this.supabaseKey,...e?.params}})}_listenForAuthEvents(){return this.auth.onAuthStateChange((e,t)=>{this._handleTokenChanged(e,`CLIENT`,t?.access_token)})}_handleTokenChanged(e,t,n){(e===`TOKEN_REFRESHED`||e===`SIGNED_IN`||e===`INITIAL_SESSION`)&&this.changedAccessToken!==n?(this.changedAccessToken=n,this.realtime.setAuth(n)):e===`SIGNED_OUT`&&(this.realtime.setAuth(),t==`STORAGE`&&this.auth.signOut(),this.changedAccessToken=void 0)}};let Ki=(e,t,n)=>new Gi(e,t,n);function qi(){if(typeof window<`u`||globalThis.Deno!==void 0)return!1;let e=globalThis.process;if(!e)return!1;let t=e.version;if(t==null)return!1;let n=t.match(/^v(\d+)\./);return n?parseInt(n[1],10)<=20:!1}return qi()&&console.warn(`⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715`),e.AuthAdminApi=Hi,e.AuthApiError=Kn,e.AuthClient=Ui,e.AuthError=Gn,e.AuthImplicitGrantRedirectError=Xn,e.AuthInvalidCredentialsError=Yn,e.AuthInvalidJwtError=sr,e.AuthInvalidTokenResponseError=L,e.AuthPKCECodeVerifierMissingError=$n,e.AuthPKCEGrantCodeExchangeError=Qn,e.AuthRefreshDiscardedError=rr,e.AuthRetryableFetchError=tr,e.AuthSessionMissingError=I,e.AuthUnknownError=P,e.AuthWeakPasswordError=ar,e.CustomAuthError=F,Object.defineProperty(e,`FunctionRegion`,{enumerable:!0,get:function(){return c}}),e.FunctionsError=i,e.FunctionsFetchError=a,e.FunctionsHttpError=s,e.FunctionsRelayError=o,e.GoTrueAdminApi=si,e.GoTrueClient=Vi,e.NavigatorLockAcquireTimeoutError=ui,e.PostgrestError=p,e.REALTIME_CHANNEL_STATES=st,Object.defineProperty(e,`REALTIME_LISTEN_TYPES`,{enumerable:!0,get:function(){return ot}}),Object.defineProperty(e,`REALTIME_POSTGRES_CHANGES_LISTEN_EVENT`,{enumerable:!0,get:function(){return at}}),Object.defineProperty(e,`REALTIME_PRESENCE_LISTEN_EVENTS`,{enumerable:!0,get:function(){return Ke}}),Object.defineProperty(e,`REALTIME_SUBSCRIBE_STATES`,{enumerable:!0,get:function(){return E}}),e.RealtimeChannel=ct,e.RealtimeClient=mt,e.RealtimePostgresFilterBuilder=rt,e.RealtimePresence=qe,e.SIGN_OUT_SCOPES=oi,e.StorageApiError=At,e.SupabaseClient=Gi,e.WebSocketFactory=le,e.createClient=Ki,e.isAuthApiError=qn,e.isAuthError=N,e.isAuthImplicitGrantRedirectError=Zn,e.isAuthPKCECodeVerifierMissingError=er,e.isAuthRefreshDiscardedError=ir,e.isAuthRetryableFetchError=nr,e.isAuthSessionMissingError=Jn,e.isAuthWeakPasswordError=or,e.lockInternals=Q,e.navigatorLock=fi,e.postgresChangesFilter=it,e.processLock=mi,e})({});
 </script>
+
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{--primary:#4a7c59;--primary-dk:#3a6347;--light:#7ab88a;--pale:#d4e2cf;--cream:#f5f2e8;--card:#fff;--text:#2c3e2d;--muted:#7a8a7a;--border:#e2dfd4;--shadow:0 2px 10px rgba(0,0,0,.05);--red:#e74c3c;--orange:#f39c12;--blue:#3b82f6}
@@ -42,6 +43,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue"
 .login-switch{font-size:13px;color:var(--muted);cursor:pointer}
 .login-switch a{color:var(--primary);text-decoration:none}
 .login-error{color:var(--red);font-size:13px;margin-bottom:8px;min-height:18px}
+.name-field{display:none}
+.name-required{color:var(--red);font-size:12px;margin-top:-6px;margin-bottom:4px;text-align:left;font-weight:600}
 
 /* ========== 主应用 ========== */
 .app{display:flex;min-height:100vh}
@@ -119,6 +122,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue"
 .icon-btn.del{color:var(--red)}
 .icon-btn.del:hover{background:#fee2e2}
 
+/* 检查表样式 */
+.check-item{display:flex;align-items:center;gap:12px;padding:12px;background:#fafaf3;border-radius:12px;transition:.2s;cursor:default}
+.check-item:hover{background:#f0ede4}
+.check-item.checked{opacity:.4}
+.check-item.checked .ci-title{text-decoration:line-through;color:var(--muted)}
+.check-item.checked .ci-note{color:var(--muted)}
+.check-box{width:24px;height:24px;border:2px solid var(--border);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;flex-shrink:0;font-size:14px;background:#fff}
+.check-box:hover{border-color:var(--primary);transform:scale(1.05)}
+.check-box.done{background:var(--primary);border-color:var(--primary);color:#fff}
+.ci-body{flex:1;min-width:0}
+.ci-title{font-size:14px;font-weight:500}
+.ci-note{font-size:12px;color:var(--muted);margin-top:2px}
+.check-done-msg{text-align:center;padding:20px;font-size:15px;color:var(--primary);font-weight:600;background:#d1fae5;border-radius:12px;margin-bottom:12px}
+.check-reset-btn{background:var(--primary);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:inherit}
+
 /* 进度条 */
 .progress-bar{height:8px;background:#f0ede4;border-radius:4px;margin:10px 0;overflow:hidden}
 .progress-bar .fill{height:100%;background:var(--primary);border-radius:4px;transition:width .4s}
@@ -138,6 +156,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue"
 .mod-card .mod-info{flex:1;min-width:0}
 .mod-card .mod-name{font-size:14px;font-weight:500}
 .mod-card .mod-type{font-size:11px;color:var(--muted)}
+
+/* 种子内容编辑 */
+.seed-editor{background:#fafaf3;border-radius:12px;padding:12px;margin-top:8px}
+.seed-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.04)}
+.seed-row:last-child{border-bottom:none}
+.seed-input{padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:#fff}
+.seed-input:focus{outline:none;border-color:var(--primary)}
+.seed-note{width:120px}
+.seed-title{flex:1}
 
 /* 管理者仪表盘 */
 .dash-user-row{display:flex;align-items:center;padding:12px;background:#fafaf3;border-radius:12px;margin-bottom:8px;cursor:pointer;transition:.15s}
@@ -180,6 +207,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue"
     <h1>凌琅科技工作台</h1>
     <div class="sub">团队协作版 · LingLang Team</div>
     <div id="loginError" class="login-error"></div>
+    <input id="loginName" class="login-input name-field" placeholder="⚠️ 必填：你的名字" type="text">
+    <div id="nameHint" class="name-required name-field">注册时名字为必填项，方便管理者识别</div>
     <input id="loginEmail" class="login-input" placeholder="邮箱" type="email">
     <input id="loginPass" class="login-input" placeholder="密码（至少6位）" type="password">
     <button id="loginBtn" class="login-btn" onclick="doLogin()">登录</button>
@@ -227,24 +256,9 @@ let currentRole = 'operator';
 let isRegisterMode = false;
 let modulesCache = [];
 let activeModId = '';
-let viewingUserId = null; // 管理者查看某运营详情时用
+let viewingUserId = null;
 
 const TD=()=>new Date().toISOString().slice(0,10);
-
-// ========== 页面加载后自动检查登录状态 ==========
-window.addEventListener('DOMContentLoaded', async ()=>{
-  if(!sb) return;
-  try {
-    const {data:{session}} = await sb.auth.getSession();
-    if(session && session.user){
-      currentUser = session.user;
-      await loadProfile();
-      enterApp();
-    }
-  } catch(e) {
-    console.error('Session check error:', e);
-  }
-});
 const esc=s=>(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 const thumbIcons={'pending':'📅','progress':'🔄','done':'✅','unchecked':'📋','checked':'✅','issue':'⚠️'};
@@ -256,6 +270,13 @@ function toggleAuthMode(){
   $('#loginBtn').textContent=isRegisterMode?'注册':'登录';
   $('#loginSwitch').innerHTML=isRegisterMode?'已有账号？<a onclick="toggleAuthMode()">登录</a>':'还没有账号？<a onclick="toggleAuthMode()">注册</a>';
   $('#loginError').textContent='';
+  // 显示/隐藏名字输入框和提示
+  const nf=$('#loginName');
+  const nh=$('#nameHint');
+  nf.classList.toggle('name-field',!isRegisterMode);
+  nh.classList.toggle('name-field',!isRegisterMode);
+  nf.style.display=isRegisterMode?'block':'none';
+  nh.style.display=isRegisterMode?'block':'none';
 }
 
 async function doLogin(){
@@ -265,8 +286,10 @@ async function doLogin(){
   }
   const email=$('#loginEmail').value.trim();
   const pass=$('#loginPass').value;
+  const name=$('#loginName').value.trim();
   if(!email||!pass){$('#loginError').textContent='请输入邮箱和密码';return}
-  
+  if(isRegisterMode&&!name){$('#loginError').textContent='请输入你的名字';return}
+
   const btn=$('#loginBtn');
   btn.disabled=true;
   btn.textContent='处理中...';
@@ -276,17 +299,15 @@ async function doLogin(){
   try {
     let result;
     if(isRegisterMode){
-      result=await sb.auth.signUp({email,password:pass});
+      // 注册时传入 display_name 到 user metadata
+      result=await sb.auth.signUp({email,password:pass,options:{data:{display_name:name}}});
       if(result.error){$('#loginError').textContent=result.error.message;btn.disabled=false;btn.textContent='注册';return}
-      // 注册成功后自动触发 handle_new_user 创建 profile
-      // 检查是否需要邮箱确认
       if(result.data?.user && !result.data.session) {
         $('#loginError').style.color='var(--orange)';
-        $('#loginError').textContent='⚠️ 注册成功但需要邮箱确认。请去邮箱点确认链接，然后再登录。或者去 Supabase Dashboard → Authentication → Providers → Email → 关闭 Confirm email。';
+        $('#loginError').textContent='⚠️ 注册成功但需要邮箱确认。请去 Supabase Dashboard → Authentication → Providers → Email → 关闭 Confirm email。';
         btn.disabled=false;btn.textContent='注册';
         return;
       }
-      // 如果注册后自动获得 session（邮箱确认已关闭），直接进入
       if(result.data?.session) {
         currentUser=result.data.user;
         await loadProfile();
@@ -318,8 +339,7 @@ async function loadProfile(){
     currentRole=data.role;
     currentUser.displayName=data.display_name;
   }else{
-    // profile 可能还没创建（trigger延迟），等一下再试
-    await new Promise(r=>setTimeout(r,1000));
+    await new Promise(r=>setTimeout(r,1500));
     const {data:d2}=await sb.from('profiles').select('*').eq('id',currentUser.id).single();
     if(d2){currentRole=d2.role;currentUser.displayName=d2.display_name;}
   }
@@ -331,32 +351,111 @@ function enterApp(){
   loadModules();
 }
 
+// ========== 加载模块 ==========
 async function loadModules(){
   const {data}=await sb.from('modules').select('*').order('sort_order');
   modulesCache=data||[];
   if(!activeModId) activeModId=modulesCache.find(m=>m.name==='运营每日工作')?.id||modulesCache[0]?.id||'';
   renderSidebar();
   renderContent();
+  // 初始化种子条目
+  await initModuleItems();
+}
+
+// ========== 种子条目初始化（核心逻辑） ==========
+async function initModuleItems(){
+  const today=TD();
+
+  for(const mod of modulesCache){
+    const rule=mod.module_rule||'normal';
+    const seedStr=mod.seed_content;
+    const seeds=seedStr?JSON.parse(seedStr):[];
+
+    if(rule==='daily'){
+      // 每日工作模块：检查今日种子条目是否存在，不存在则创建
+      const {data:existing}=await sb.from('items').select('id')
+        .eq('module_id',mod.id)
+        .eq('user_id',currentUser.id)
+        .eq('date',today)
+        .eq('is_seed',true);
+      if(!existing||existing.length===0){
+        if(seeds.length>0){
+          const inserts=seeds.map(s=>({
+            module_id:mod.id,
+            user_id:currentUser.id,
+            title:s.title,
+            note:s.note||'',
+            badge:'pending',
+            date:today,
+            is_seed:true
+          }));
+          await sb.from('items').insert(inserts);
+        }
+      }
+      // 刷新当前视图
+      if(activeModId===mod.id && currentRole==='operator'){
+        const m=modulesCache.find(m=>m.id===mod.id);
+        if(m) loadListData(m);
+      }
+
+    }else if(rule==='checklist'){
+      // 检查表模块：种子条目持久存在，新一天重置打勾状态
+      const {data:existing}=await sb.from('items').select('id,title,is_seed')
+        .eq('module_id',mod.id)
+        .eq('user_id',currentUser.id);
+      const existingSeeds=(existing||[]).filter(i=>i.is_seed);
+
+      // 检查是否有缺失的种子条目（管理者可能新增了种子内容）
+      const missingSeeds=seeds.filter(s=>!existingSeeds.some(e=>e.title===s.title));
+      if(missingSeeds.length>0){
+        const inserts=missingSeeds.map((s,i)=>({
+          module_id:mod.id,
+          user_id:currentUser.id,
+          title:s.title,
+          note:s.note||'',
+          badge:'unchecked',
+          is_seed:true
+        }));
+        await sb.from('items').insert(inserts);
+      }
+
+      // 新一天重置：把所有 checked 状态改为 unchecked
+      const lastReset=localStorage.getItem('cl_reset_'+mod.id+'_'+currentUser.id);
+      if(lastReset!==today){
+        await sb.from('items').update({badge:'unchecked'})
+          .eq('module_id',mod.id)
+          .eq('user_id',currentUser.id)
+          .in('badge',['checked']);
+        localStorage.setItem('cl_reset_'+mod.id+'_'+currentUser.id,today);
+      }
+
+      // 刷新当前视图
+      if(activeModId===mod.id && currentRole==='operator'){
+        const m=modulesCache.find(m=>m.id===mod.id);
+        if(m) loadListData(m);
+      }
+
+    }
+    // normal 模块：不做任何自动操作
+  }
 }
 
 // ========== 侧边栏 ==========
 function renderSidebar(){
   const roleLabel=currentRole==='manager'?'管理者':'运营';
   const roleCls=currentRole==='manager'?'manager':'';
-  $('#sbHd').innerHTML=`<div class="emoji">🏢</div><div class="title">凌琅科技工作台</div><div class="sub">${esc(currentUser.displayName||currentUser.email)} · ${roleLabel}</div><div class="role-badge ${roleCls}">${roleLabel}</div>`;
+  const displayName=currentUser.displayName||currentUser.email||'';
+  $('#sbHd').innerHTML=`<div class="emoji">🏢</div><div class="title">凌琅科技工作台</div><div class="sub">${esc(displayName)} · ${roleLabel}</div><div class="role-badge ${roleCls}">${roleLabel}</div>`;
 
   const menu=$('#menu');
   menu.innerHTML='';
-  // 运营和管理者都有侧边栏菜单
   if(currentRole==='operator'){
     modulesCache.forEach(mod=>{
-      if(mod.name==='设置') return; // 运营不显示"设置"模块
+      if(mod.module_rule==='normal'&&mod.name==='设置') return;
       menu.innerHTML+=`<div class="mi${activeModId===mod.id?' active':''}" data-mid="${mod.id}"><span class="icon">${mod.icon}</span><span class="label">${esc(mod.name)}</span></div>`;
     });
-    // 运营专属：我的设置（只有改名字等基础功能）
     menu.innerHTML+=`<div class="mi${activeModId==='my-settings'?' active':''}" data-mid="my-settings"><span class="icon">⚙️</span><span class="label">我的设置</span></div>`;
   }else{
-    // 管理者：仪表盘 + 各模块 + 设置
     menu.innerHTML+=`<div class="mi${activeModId==='dashboard'?' active':''}" data-mid="dashboard"><span class="icon">📊</span><span class="label">团队总览</span></div>`;
     modulesCache.forEach(mod=>{
       if(mod.name==='设置') return;
@@ -365,14 +464,12 @@ function renderSidebar(){
     menu.innerHTML+=`<div class="mi${activeModId==='settings'?' active':''}" data-mid="settings"><span class="icon">⚙️</span><span class="label">系统设置</span></div>`;
   }
 
-  // 绑定切换
   $$('.mi').forEach(it=>{
     it.addEventListener('click',()=>{
       $$('.mi').forEach(i=>i.classList.remove('active'));
-      $$('.module').forEach(m=>m.classList.remove('active'));
       it.classList.add('active');
       activeModId=it.dataset.mid;
-      viewingUserId=null; // 重置
+      viewingUserId=null;
       renderContent();
       const target=$('#mod_'+activeModId);
       if(target) target.classList.add('active');
@@ -401,7 +498,6 @@ function renderContent(){
   }else if(activeModId==='my-settings' && currentRole==='operator'){
     area.innerHTML=renderOperatorSettings();
   }else{
-    // 模块内容
     const mod=modulesCache.find(m=>m.id===activeModId);
     if(mod){
       if(mod.type==='list'){
@@ -432,29 +528,28 @@ function renderDashboard(){
 }
 
 async function loadDashboardData(){
-  // 获取所有运营 profile
   const {data:operators}=await sb.from('profiles').select('*').eq('role','operator');
   if(!operators) return;
-
   $('#dsTotalOps').textContent=operators.length;
 
-  // 获取所有运营今日的 items
   const today=TD();
-  const {data:allItems}=await sb.from('items').select('user_id, badge, module_id').eq('date',today);
+  // 获取今日所有运营的 items（管理者可以看到所有）
+  const opIds=operators.map(o=>o.id);
+  const {data:allItems}=await sb.from('items').select('user_id, badge, module_id, is_seed')
+    .in('user_id',opIds);
 
-  // 计算每个运营的完成率（基于"运营每日工作"模块）
-  const dailyMod=modulesCache.find(m=>m.name==='运营每日工作');
-  let totalDone=0;
-  let totalPct=0;
-  let opCount=0;
+  // 只看今日的 daily 模块数据
+  const dailyMod=modulesCache.find(m=>m.module_rule==='daily');
+  const dailyItems=(allItems||[]).filter(i=>i.module_id===dailyMod?.id);
+
+  let totalDone=0, totalPct=0, opCount=0;
 
   const dashList=$('#dashList');
   dashList.innerHTML='';
   operators.forEach(op=>{
-    const myItems=(allItems||[]).filter(i=>i.user_id===op.id);
-    const dailyItems=myItems.filter(i=>i.module_id===dailyMod?.id);
-    const done=dailyItems.filter(i=>i.badge==='done').length;
-    const total=dailyItems.length;
+    const myItems=dailyItems.filter(i=>i.user_id===op.id && i.date===today);
+    const done=myItems.filter(i=>i.badge==='done').length;
+    const total=myItems.length;
     const pct=total?Math.round(done/total*100):0;
     if(total>0){totalPct+=pct;opCount++;}
     totalDone+=done;
@@ -474,55 +569,79 @@ async function loadDashboardData(){
   $('#dsTodayDone').textContent=totalDone;
 }
 
-// 管理者查看某运营详情
 async function viewUserDetail(userId, userName){
   viewingUserId=userId;
-  const mod=modulesCache.find(m=>m.name==='运营每日工作');
-  if(!mod) return;
-
   const today=TD();
-  const {data:items}=await sb.from('items').select('*').eq('module_id',mod.id).eq('user_id',userId).eq('date',today);
 
-  const done=(items||[]).filter(i=>i.badge==='done').length;
-  const prog=(items||[]).filter(i=>i.badge==='progress').length;
-  const pend=(items||[]).filter(i=>i.badge==='pending').length;
-  const total=items?.length||0;
-  const pct=total?Math.round(done/total*100):0;
-
-  const cycles=mod.badge_cycle.split(',');
-  const labels=mod.badge_labels.split(',');
-
-  let listHtml='';
-  (items||[]).forEach(it=>{
-    const bc=badgeClassMap[it.badge]||'badge-pending';
-    const bt=labels[cycles.indexOf(it.badge)]||it.badge;
-    const ti=thumbIcons[it.badge]||mod.icon;
-    const isDone=it.badge==='done';
-    listHtml+=`<div class="li" style="${isDone?'opacity:.7':''}">
-      <div class="thumb">${ti}</div>
-      <div class="meta">
-        <div class="name" style="${isDone?'text-decoration:line-through;color:var(--muted)':''}">${esc(it.title)}</div>
-        ${it.note?`<div class="desc">${esc(it.note)}</div>`:''}
-        <div class="badges"><span class="badge ${bc}">${esc(bt)}</span><span style="font-size:11px;color:var(--muted)">${it.date}</span></div>
-      </div>
-    </div>`;
-  });
+  // 获取该运营今日所有模块的数据
+  const {data:allItems}=await sb.from('items').select('*').eq('user_id',userId);
 
   const area=$('#contentArea');
-  area.innerHTML=`<section class="module active">
+  let html=`<section class="module active">
     <button class="back-btn" onclick="backToDashboard()">← 返回总览</button>
     <div class="card">
-      <div class="card-title"><span class="emoji">👤</span>${esc(userName)} 的今日工作</div>
-      <div class="stats">
+      <div class="card-title"><span class="emoji">👤</span>${esc(userName)} 的工作详情</div>`;
+
+  // 遍历每个模块展示
+  for(const mod of modulesCache){
+    if(mod.name==='设置') continue;
+    const rule=mod.module_rule||'normal';
+    let modItems;
+    if(rule==='daily'){
+      modItems=(allItems||[]).filter(i=>i.module_id===mod.id && i.date===today);
+    }else if(rule==='checklist'){
+      modItems=(allItems||[]).filter(i=>i.module_id===mod.id);
+    }else{
+      modItems=(allItems||[]).filter(i=>i.module_id===mod.id);
+    }
+    if(modItems.length===0) continue;
+
+    if(rule==='checklist'){
+      const checked=modItems.filter(i=>i.badge==='checked').length;
+      const unchecked=modItems.filter(i=>i.badge==='unchecked').length;
+      const total=modItems.length;
+      html+=`<div style="margin-top:16px"><text class="section-title">${mod.icon} ${esc(mod.name)}</text>`;
+      html+=`<div style="font-size:12px;color:var(--muted);margin-bottom:8px">${checked}/${total} 已检查</div>`;
+      modItems.forEach(it=>{
+        const isC=it.badge==='checked';
+        html+=`<div class="check-item${isC?' checked':''}" style="margin-bottom:6px">
+          <div class="check-box${isC?' done':''}">${isC?'✓':''}</div>
+          <div class="ci-body"><div class="ci-title">${esc(it.title)}</div>${it.note?`<div class="ci-note">${esc(it.note)}</div>`:''}</div>
+        </div>`;
+      });
+      html+=`</div>`;
+    }else{
+      const done=modItems.filter(i=>i.badge==='done').length;
+      const prog=modItems.filter(i=>i.badge==='progress').length;
+      const pend=modItems.filter(i=>i.badge==='pending').length;
+      const total=modItems.length;
+      const pct=total?Math.round(done/total*100):0;
+      const cycles=mod.badge_cycle?mod.badge_cycle.split(','):['pending','progress','done'];
+      const labels=mod.badge_labels?mod.badge_labels.split(','):cycles;
+      html+=`<div style="margin-top:16px"><text class="section-title">${mod.icon} ${esc(mod.name)}</text>`;
+      html+=`<div class="stats" style="margin-bottom:8px">
         <div class="stat"><div class="num">${pend}</div><div class="label">待处理</div></div>
         <div class="stat"><div class="num" style="color:var(--blue)">${prog}</div><div class="label">进行中</div></div>
         <div class="stat"><div class="num" style="color:var(--primary)">${done}</div><div class="label">已完成</div></div>
-      </div>
-      <div class="progress-bar"><div class="fill" style="width:${pct}%"></div></div>
-      <div class="card-sub">完成进度：${pct}%（${done}/${total}）</div>
-      <div class="list">${listHtml||'<div class="empty">今日暂无工作记录</div>'}</div>
-    </div>
-  </section>`;
+      </div>`;
+      html+=`<div class="progress-bar"><div class="fill" style="width:${pct}%"></div></div>`;
+      modItems.forEach(it=>{
+        const bc=badgeClassMap[it.badge]||'badge-pending';
+        const bt=labels[cycles.indexOf(it.badge)]||it.badge;
+        const ti=thumbIcons[it.badge]||mod.icon;
+        const isDone=it.badge==='done';
+        html+=`<div class="li" style="${isDone?'opacity:.7':''};margin-bottom:6px">
+          <div class="thumb">${ti}</div>
+          <div class="meta"><div class="name" style="${isDone?'text-decoration:line-through;color:var(--muted)':''}">${esc(it.title)}</div>
+          ${it.note?`<div class="desc">${esc(it.note)}</div>`:''}
+          <div class="badges"><span class="badge ${bc}">${esc(bt)}</span></div></div>
+        </div>`;
+      });
+      html+=`</div>`;
+    }
+  }
+  html+=`</div></section>`;
+  area.innerHTML=html;
 }
 
 function backToDashboard(){
@@ -544,7 +663,7 @@ function renderManagerSettings(){
 
       <text class="section-title">👤 人员管理</text>
       <div id="userMgmtList"></div>
-      <div style="margin-top:8px;font-size:12px;color:var(--muted)">💡 新运营注册后默认为"运营"角色，管理者可在此升级为管理者</div>
+      <div style="margin-top:8px;font-size:12px;color:var(--muted)">💡 新运营注册后默认为"运营"角色，管理者可在此升级角色</div>
 
       <text class="section-title">📦 模块管理</text>
       <div id="modMgmtList"></div>
@@ -563,7 +682,6 @@ function renderManagerSettings(){
 }
 
 async function loadSettingsData(){
-  // 人员管理
   const {data:users}=await sb.from('profiles').select('*');
   const umList=$('#userMgmtList');
   umList.innerHTML='';
@@ -576,17 +694,18 @@ async function loadSettingsData(){
     </div>`;
   });
 
-  // 模块管理
   const modList=$('#modMgmtList');
   modList.innerHTML='';
   modulesCache.forEach(mod=>{
     if(mod.name==='设置') return;
     const typeLabel=mod.type==='list'?'列表':'文本';
+    const ruleLabel={'normal':'普通','daily':'每日刷新','checklist':'检查表'}[mod.module_rule||'normal']||'普通';
     modList.innerHTML+=`<div class="mod-card">
       <div class="mod-icon">${mod.icon}</div>
-      <div class="mod-info"><div class="mod-name">${esc(mod.name)}</div><div class="mod-type">${typeLabel} · ${esc(mod.badge_labels)}</div></div>
+      <div class="mod-info"><div class="mod-name">${esc(mod.name)}</div><div class="mod-type">${typeLabel} · 规则：${ruleLabel}</div></div>
       <div style="display:flex;gap:4px">
         <button class="btn btn-sm btn-g" onclick="editModule('${mod.id}')">✏️</button>
+        <button class="btn btn-sm btn-g" onclick="editSeedContent('${mod.id}')">📝种子</button>
         <button class="btn btn-sm btn-r" onclick="delModule('${mod.id}')">✕</button>
       </div>
     </div>`;
@@ -605,10 +724,12 @@ async function addModule(){
   const icon=prompt('图标（emoji）：','📌');
   const type=prompt('类型：1=列表 2=文本','1');
   const mt=type==='2'?'text':'list';
-  const bc=mt==='list'?(prompt('徽章流程（逗号分隔）：','pending,progress,done')||'pending,progress,done'):'';
-  const bl=mt==='list'?(prompt('徽章标签（逗号分隔）：','待处理,进行中,已完成')||'待处理,进行中,已完成'):'';
+  const rule=prompt('规则：1=普通 2=每日刷新 3=检查表','1');
+  const ruleVal={'1':'normal','2':'daily','3':'checklist'}[rule]||'normal';
+  const bc=mt==='list'?(ruleVal==='checklist'?'unchecked,checked':'pending,progress,done'):'';
+  const bl=mt==='list'?(ruleVal==='checklist'?'未检查,已检查':'待处理,进行中,已完成'):'';
   const maxSort=modulesCache.reduce((mx,m)=>Math.max(mx,m.sort_order||0),0);
-  await sb.from('modules').insert({icon:icon||'📌',name:name.trim(),type:mt,badge_cycle:bc,badge_labels:bl,sort_order:maxSort+1});
+  await sb.from('modules').insert({icon:icon||'📌',name:name.trim(),type:mt,module_rule:ruleVal,badge_cycle:bc,badge_labels:bl,sort_order:maxSort+1});
   await loadModules();
   activeModId='settings';renderSidebar();renderContent();
 }
@@ -627,6 +748,127 @@ async function delModule(modId){
   await sb.from('modules').delete().eq('id',modId);
   await loadModules();
   activeModId='settings';renderSidebar();renderContent();
+}
+
+// ========== 管理者 - 编辑种子内容 ==========
+async function editSeedContent(modId){
+  const mod=modulesCache.find(m=>m.id===modId);
+  const currentSeeds=mod.seed_content?JSON.parse(mod.seed_content):[];
+  const rule=mod.module_rule||'normal';
+  if(rule==='normal'){
+    alert('普通模块（如今日计划）没有种子内容，运营自己添加即可。');
+    return;
+  }
+
+  // 构建编辑界面
+  const area=$('#contentArea');
+  let html=`<section class="module active">
+    <button class="back-btn" onclick="backToSettings()">← 返回设置</button>
+    <div class="card">
+      <div class="card-title"><span class="emoji">📝</span>编辑种子内容 · ${esc(mod.name)}</div>
+      <div class="card-sub">${rule==='daily'?'每日工作：每天自动为运营创建这些条目':'检查表：这些条目同步到所有运营，不可删除'}</div>
+      <div id="seedEditorList" class="seed-editor"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn btn-p" onclick="addSeedRow('${modId}')">+ 添加条目</button>
+        <button class="btn btn-p" onclick="saveSeedContent('${modId}')">💾 保存</button>
+      </div>
+    </div>
+  </section>`;
+  area.innerHTML=html;
+
+  // 渲染现有种子
+  const list=$('#seedEditorList');
+  list.innerHTML='';
+  currentSeeds.forEach((s,i)=>{
+    list.innerHTML+=`<div class="seed-row" data-idx="${i}">
+      <input class="seed-input seed-title" value="${esc(s.title)}" placeholder="条目标题">
+      <input class="seed-input seed-note" value="${esc(s.note||'')}" placeholder="备注">
+      <button class="btn btn-sm btn-r" onclick="removeSeedRow(this)">✕</button>
+    </div>`;
+  });
+  if(currentSeeds.length===0){
+    list.innerHTML='<div class="empty">暂无种子条目，点击"+ 添加条目"</div>';
+  }
+}
+
+function addSeedRow(modId){
+  const list=$('#seedEditorList');
+  const emptyMsg=list.querySelector('.empty');
+  if(emptyMsg) emptyMsg.remove();
+  const idx=list.querySelectorAll('.seed-row').length;
+  list.innerHTML+=`<div class="seed-row" data-idx="${idx}">
+    <input class="seed-input seed-title" value="" placeholder="条目标题">
+    <input class="seed-input seed-note" value="" placeholder="备注">
+    <button class="btn btn-sm btn-r" onclick="removeSeedRow(this)">✕</button>
+  </div>`;
+}
+
+function removeSeedRow(btn){
+  btn.closest('.seed-row').remove();
+}
+
+async function saveSeedContent(modId){
+  const rows=$$('#seedEditorList .seed-row');
+  const seeds=[];
+  rows.forEach(r=>{
+    const title=r.querySelector('.seed-title').value.trim();
+    const note=r.querySelector('.seed-note').value.trim();
+    if(title) seeds.push({title,note});
+  });
+  await sb.from('modules').update({seed_content:JSON.stringify(seeds)}).eq('id',modId);
+  alert('✅ 种子内容已保存！运营下次打开应用时会同步更新。');
+  // 对于 daily 模块，需要同步给所有运营
+  await syncSeedToAllOperators(modId);
+  backToSettings();
+}
+
+// 同步种子内容到所有运营
+async function syncSeedToAllOperators(modId){
+  const mod=modulesCache.find(m=>m.id===modId);
+  if(!mod) return;
+  const rule=mod.module_rule;
+  const seeds=mod.seed_content?JSON.parse(mod.seed_content):[];
+  if(seeds.length===0) return;
+
+  const {data:operators}=await sb.from('profiles').select('id').eq('role','operator');
+  if(!operators) return;
+
+  const today=TD();
+  for(const op of operators){
+    // 对于 daily 模块：删除旧的种子条目，创建新的
+    if(rule==='daily'){
+      await sb.from('items').delete()
+        .eq('module_id',modId)
+        .eq('user_id',op.id)
+        .eq('is_seed',true)
+        .eq('date',today);
+      const inserts=seeds.map((s,i)=>({
+        module_id:modId,user_id:op.id,title:s.title,note:s.note||'',
+        badge:'pending',date:today,is_seed:true
+      }));
+      await sb.from('items').insert(inserts);
+    }
+    // 对于 checklist 模块：只添加缺失的条目
+    else if(rule==='checklist'){
+      const {data:existing}=await sb.from('items').select('title')
+        .eq('module_id',modId).eq('user_id',op.id).eq('is_seed',true);
+      const existingTitles=(existing||[]).map(e=>e.title);
+      const missing=seeds.filter(s=>!existingTitles.includes(s.title));
+      if(missing.length>0){
+        const inserts=missing.map(s=>({
+          module_id:modId,user_id:op.id,title:s.title,note:s.note||'',
+          badge:'unchecked',is_seed:true
+        }));
+        await sb.from('items').insert(inserts);
+      }
+    }
+  }
+}
+
+function backToSettings(){
+  activeModId='settings';
+  renderSidebar();
+  renderContent();
 }
 
 async function exportTeamData(){
@@ -673,22 +915,32 @@ async function exportMyData(){
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`my-backup-${TD()}.json`;a.click();
 }
 
-// ========== 列表型模块 ==========
+// ========== 列表型模块渲染 ==========
 function renderListModule(mod){
+  const rule=mod.module_rule||'normal';
+  const isOperator=currentRole==='operator';
+
+  if(rule==='checklist' && isOperator){
+    return renderChecklistModule(mod);
+  }
+
+  // 普通列表或每日工作列表
   const cycles=mod.badge_cycle?mod.badge_cycle.split(','):['pending','progress','done'];
   const labels=mod.badge_labels?mod.badge_labels.split(','):cycles;
   const selOptions=cycles.map((c,i)=>`<option value="${c}">${esc(labels[i])}</option>`).join('');
-  const isOperator=currentRole==='operator';
-  // 运营可以看到自己的统计和添加条目；管理者看到所有人的汇总
+
   const addRow=isOperator?`<div class="row" style="margin-bottom:12px">
     <input class="input" id="addInput_${mod.id}" placeholder="添加条目…" style="flex:1" onkeydown="if(event.key==='Enter')addItem('${mod.id}')">
     ${cycles.length>1?`<select class="input" id="addBadge_${mod.id}" style="flex:0 0 100px;font-size:13px">${selOptions}</select>`:''}
     <button class="btn btn-p" onclick="addItem('${mod.id}')">添加</button>
   </div>`:'';
 
+  const ruleHint=rule==='daily'?'<div class="card-sub">⏰ 每日工作：条目每日刷新重置，今日计划中添加的内容不会被刷新</div>':'';
+
   return `<section class="module" id="mod_${mod.id}">
     <div class="card">
       <div class="card-title"><span class="emoji">${mod.icon}</span>${esc(mod.name)}</div>
+      ${ruleHint}
       ${addRow}
       <div id="listStats_${mod.id}" class="stats"></div>
       <div class="progress-bar"><div class="fill" id="listProg_${mod.id}"></div></div>
@@ -698,24 +950,173 @@ function renderListModule(mod){
   </section>`;
 }
 
+// ========== 检查表模块渲染 ==========
+function renderChecklistModule(mod){
+  return `<section class="module" id="mod_${mod.id}">
+    <div class="card">
+      <div class="card-title"><span class="emoji">${mod.icon}</span>${esc(mod.name)}</div>
+      <div class="card-sub">📋 检查表：条目不可删除，打勾变暗，全部打勾或新一天自动重置</div>
+      <div id="checkStats_${mod.id}" class="stats">
+        <div class="stat"><div class="num" id="ckUnchecked_${mod.id}">-</div><div class="label">待检查</div></div>
+        <div class="stat"><div class="num" style="color:var(--primary)" id="ckChecked_${mod.id}">-</div><div class="label">已检查</div></div>
+        <div class="stat"><div class="num" id="ckTotal_${mod.id}">-</div><div class="label">总条目</div></div>
+      </div>
+      <div class="progress-bar"><div class="fill" id="ckProg_${mod.id}"></div></div>
+      <div id="ckProgLabel_${mod.id}" class="card-sub"></div>
+      <div id="ckDoneMsg_${mod.id}"></div>
+      <div id="checkItems_${mod.id}"></div>
+    </div>
+  </section>`;
+}
+
+// ========== 加载列表数据 ==========
 async function loadListData(mod){
+  const rule=mod.module_rule||'normal';
   const today=TD();
   const cycles=mod.badge_cycle?mod.badge_cycle.split(','):['pending','progress','done'];
   const labels=mod.badge_labels?mod.badge_labels.split(','):cycles;
 
+  if(rule==='checklist'){
+    await loadChecklistData(mod);
+    return;
+  }
+
   if(currentRole==='operator'){
     // 运营只看自己的数据
-    const {data:items}=await sb.from('items').select('*').eq('module_id',mod.id).eq('user_id',currentUser.id).eq('date',today);
-    renderOperatorList(mod,items||[],cycles,labels,today);
+    let query=sb.from('items').select('*').eq('module_id',mod.id).eq('user_id',currentUser.id);
+    if(rule==='daily'){
+      query=query.eq('date',today);
+    }
+    const {data:items}=await query;
+    renderOperatorList(mod,items||[],cycles,labels,today,rule);
   }else{
     // 管理者看所有人的汇总
-    const {data:items}=await sb.from('items').select('*').eq('module_id',mod.id).eq('date',today);
+    let query=sb.from('items').select('*').eq('module_id',mod.id);
+    if(rule==='daily'){
+      query=query.eq('date',today);
+    }
+    const {data:items}=await query;
     const {data:ops}=await sb.from('profiles').select('id,display_name').eq('role','operator');
     renderManagerList(mod,items||[],ops||[],cycles,labels,today);
   }
 }
 
-function renderOperatorList(mod,items,cycles,labels,today){
+// ========== 加载检查表数据 ==========
+async function loadChecklistData(mod){
+  if(currentRole==='operator'){
+    const {data:items}=await sb.from('items').select('*')
+      .eq('module_id',mod.id).eq('user_id',currentUser.id);
+    renderChecklist(mod,items||[]);
+  }else{
+    // 管理者看所有运营的检查表汇总
+    const {data:ops}=await sb.from('profiles').select('id,display_name').eq('role','operator');
+    const {data:allItems}=await sb.from('items').select('*').eq('module_id',mod.id);
+    renderManagerChecklist(mod,allItems||[],ops||[]);
+  }
+}
+
+// ========== 渲染运营检查表 ==========
+function renderChecklist(mod, items){
+  const checked=items.filter(i=>i.badge==='checked').length;
+  const unchecked=items.filter(i=>i.badge==='unchecked').length;
+  const total=items.length;
+  const pct=total?Math.round(checked/total*100):0;
+
+  $('#ckUnchecked_'+mod.id).textContent=unchecked;
+  $('#ckChecked_'+mod.id).textContent=checked;
+  $('#ckTotal_'+mod.id).textContent=total;
+  $('#ckProg_'+mod.id).style.width=pct+'%';
+  $('#ckProgLabel_'+mod.id).textContent=`检查进度：${pct}%（${checked}/${total}）`;
+
+  // 全部完成提示
+  const doneMsg=$('#ckDoneMsg_'+mod.id);
+  if(checked===total && total>0){
+    doneMsg.innerHTML=`<div class="check-done-msg">🎉 全部检查完成！<button class="check-reset-btn" onclick="resetChecklist('${mod.id}')">重置所有状态</button></div>`;
+  }else{
+    doneMsg.innerHTML='';
+  }
+
+  // 渲染条目列表
+  const listEl=$('#checkItems_'+mod.id);
+  listEl.innerHTML='';
+  if(total===0){
+    listEl.innerHTML='<div class="empty">暂无检查条目</div>';
+    return;
+  }
+  items.forEach(it=>{
+    const isC=it.badge==='checked';
+    listEl.innerHTML+=`<div class="check-item${isC?' checked':''}">
+      <div class="check-box${isC?' done':''}" onclick="toggleCheck(${it.id},'${mod.id}')">${isC?'✓':''}</div>
+      <div class="ci-body">
+        <div class="ci-title">${esc(it.title)}</div>
+        ${it.note?`<div class="ci-note">${esc(it.note)}</div>`:''}
+      </div>
+    </div>`;
+  });
+}
+
+async function toggleCheck(itemId, modId){
+  const {data:item}=await sb.from('items').select('badge').eq('id',itemId).single();
+  if(!item) return;
+  const newBadge=item.badge==='checked'?'unchecked':'checked';
+  await sb.from('items').update({badge:newBadge}).eq('id',itemId);
+  const mod=modulesCache.find(m=>m.id===modId);
+  if(mod) loadChecklistData(mod);
+
+  // 检查是否全部完成，自动重置
+  if(newBadge==='checked'){
+    const {data:allItems}=await sb.from('items').select('badge')
+      .eq('module_id',modId).eq('user_id',currentUser.id);
+    const allChecked=allItems.every(i=>i.badge==='checked');
+    if(allChecked && allItems.length>0){
+      // 不自动重置，而是显示提示让用户手动重置或等新一天
+    }
+  }
+}
+
+async function resetChecklist(modId){
+  await sb.from('items').update({badge:'unchecked'})
+    .eq('module_id',modId).eq('user_id',currentUser.id);
+  const mod=modulesCache.find(m=>m.id===modId);
+  if(mod) loadChecklistData(mod);
+}
+
+// ========== 管理者检查表汇总 ==========
+function renderManagerChecklist(mod, allItems, ops){
+  const listEl=$('#checkItems_'+mod.id);
+  listEl.innerHTML='';
+  $('#ckDoneMsg_'+mod.id).innerHTML='';
+
+  const unchecked=allItems.filter(i=>i.badge==='unchecked').length;
+  const checked=allItems.filter(i=>i.badge==='checked').length;
+  const total=allItems.length;
+  const pct=total?Math.round(checked/total*100):0;
+
+  $('#ckUnchecked_'+mod.id).textContent=unchecked;
+  $('#ckChecked_'+mod.id).textContent=checked;
+  $('#ckTotal_'+mod.id).textContent=total;
+  $('#ckProg_'+mod.id).style.width=pct+'%';
+  $('#ckProgLabel_'+mod.id).textContent=`团队检查进度：${pct}%`;
+
+  ops.forEach(op=>{
+    const myItems=allItems.filter(i=>i.user_id===op.id);
+    const myChecked=myItems.filter(i=>i.badge==='checked').length;
+    const myTotal=myItems.length;
+    const myPct=myTotal?Math.round(myChecked/myTotal*100):0;
+    listEl.innerHTML+=`<div class="dash-user-row" onclick="viewUserDetail('${op.id}','${esc(op.display_name)}')">
+      <div class="user-avatar">${op.display_name?.charAt(0)||'👤'}</div>
+      <div class="user-info">
+        <div class="user-name">${esc(op.display_name||op.id.slice(0,8))}</div>
+        <div class="user-stats">${myChecked}/${myTotal} 已检查</div>
+        <div class="user-detail-bar"><div style="height:100%;width:${myPct}%;background:var(--primary);border-radius:3px"></div></div>
+      </div>
+      <div class="user-pct">${myPct}%</div>
+    </div>`;
+  });
+}
+
+// ========== 渲染运营列表（普通/daily） ==========
+function renderOperatorList(mod,items,cycles,labels,today,rule){
   const total=items.length;
   const doneIdx=cycles.indexOf('done')>=0?cycles.indexOf('done'):cycles.length-1;
   const done=items.filter(i=>i.badge===cycles[doneIdx]).length;
@@ -735,36 +1136,35 @@ function renderOperatorList(mod,items,cycles,labels,today){
     const ti=thumbIcons[it.badge]||mod.icon;
     const isDone=it.badge==='done'||it.badge==='checked';
     const isIssue=it.badge==='issue';
+    // 种子条目运营不可删除（daily模块的种子条目）
+    const canDelete=rule==='daily'&&it.is_seed?false:true;
     listEl.innerHTML+=`<div class="li" style="${isDone?'opacity:.7':isIssue?'background:#fef2f2':''}">
       <div class="thumb" onclick="cycleBadge('${mod.id}',${it.id})">${ti}</div>
       <div class="meta">
-        <div class="name" style="${isDone?'text-decoration:line-through;color:var(--muted)':''}">${esc(it.title)}</div>
+        <div class="name" style="${isDone?'text-decoration:line-through;color:var(--muted)':''}">${esc(it.title)}${it.is_seed?'':' <span style="font-size:11px;color:var(--blue)">自定义</span>'}</div>
         ${it.note?`<div class="desc">${esc(it.note)}</div>`:''}
-        <div class="badges"><span class="badge ${bc}">${esc(bt)}</span><span style="font-size:11px;color:var(--muted)">${it.date}</span></div>
+        <div class="badges"><span class="badge ${bc}">${esc(bt)}</span><span style="font-size:11px;color:var(--muted)">${rule==='daily'?it.date:''}</span></div>
       </div>
       <div class="ops">
         <button class="icon-btn" onclick="editItem(${it.id})">✏️</button>
-        <button class="icon-btn del" onclick="delItem(${it.id},'${mod.id}')">🗑</button>
+        ${canDelete?`<button class="icon-btn del" onclick="delItem(${it.id},'${mod.id}')">🗑</button>`:''}
       </div>
     </div>`;
   });
 }
 
 function renderManagerList(mod,allItems,ops,cycles,labels,today){
-  // 管理者看到每个运营的汇总
   const listEl=$('#listItems_'+mod.id);
   const totalAll=allItems.length;
   const doneIdx=cycles.indexOf('done')>=0?cycles.indexOf('done'):cycles.length-1;
   const totalDone=allItems.filter(i=>i.badge===cycles[doneIdx]).length;
   const pct=totalAll?Math.round(totalDone/totalAll*100):0;
 
-  // 全局统计
   const counts=cycles.map(c=>({count:allItems.filter(i=>i.badge===c).length,label:labels[cycles.indexOf(c)]}));
   $('#listStats_'+mod.id).innerHTML=counts.map((c,i)=>`<div class="stat"><div class="num">${c.count}</div><div class="label">${esc(c.label)}</div></div>`).join('');
   $('#listProg_'+mod.id).style.width=pct+'%';
   $('#listProgLabel_'+mod.id).textContent=`团队完成进度：${pct}%（${totalDone}/${totalAll}）`;
 
-  // 每个运营一行
   listEl.innerHTML='';
   ops.forEach(op=>{
     const myItems=allItems.filter(i=>i.user_id===op.id);
@@ -788,21 +1188,30 @@ async function addItem(modId){
   const v=$('#addInput_'+modId).value.trim();if(!v) return;
   const bEl=$('#addBadge_'+modId);
   const b=bEl?bEl.value:'pending';
-  await sb.from('items').insert({module_id:modId,user_id:currentUser.id,title:v,note:'',badge:b,date:TD()});
-  $('#addInput_'+modId).value='';
   const mod=modulesCache.find(m=>m.id===modId);
+  const rule=mod.module_rule||'normal';
+  const itemData={
+    module_id:modId,user_id:currentUser.id,title:v,note:'',badge:b,
+    is_seed:false
+  };
+  if(rule==='daily'){
+    itemData.date=TD();
+  }
+  await sb.from('items').insert(itemData);
+  $('#addInput_'+modId).value='';
   loadListData(mod);
 }
 
 async function cycleBadge(modId,itemId){
   const mod=modulesCache.find(m=>m.id===modId);
+  const rule=mod.module_rule||'normal';
+  if(rule==='checklist') return; // 检查表用 toggleCheck，不走 cycleBadge
   const cycles=mod.badge_cycle.split(',');
-  // 先获取当前 badge
   const {data:item}=await sb.from('items').select('badge').eq('id',itemId).single();
   if(!item) return;
   const cur=cycles.indexOf(item.badge);
   const next=cycles[(cur+1)%cycles.length];
-  await sb.from('items').update({badge:next,updated_at:new Date().toISOString()}).eq('id',itemId);
+  await sb.from('items').update({badge:next}).eq('id',itemId);
   loadListData(mod);
 }
 
@@ -812,16 +1221,22 @@ async function editItem(itemId){
   const newT=prompt('编辑条目：',item.title);
   if(newT!==null&&newT.trim()){
     const newN=prompt('备注：',item.note||'');
-    await sb.from('items').update({title:newT.trim(),note:newN||'',updated_at:new Date().toISOString()}).eq('id',itemId);
+    await sb.from('items').update({title:newT.trim(),note:newN||''}).eq('id',itemId);
     const mod=modulesCache.find(m=>m.id===item.module_id);
     if(mod) loadListData(mod);
   }
 }
 
 async function delItem(itemId,modId){
+  // 检查模块规则
+  const mod=modulesCache.find(m=>m.id===modId);
+  const rule=mod.module_rule||'normal';
+  if(rule==='checklist'){
+    alert('检查表条目不可删除');
+    return;
+  }
   if(!confirm('删除此条目？')) return;
   await sb.from('items').delete().eq('id',itemId);
-  const mod=modulesCache.find(m=>m.id===modId);
   if(mod) loadListData(mod);
 }
 
@@ -852,10 +1267,8 @@ async function loadTextData(mod){
     $('#textGood_'+mod.id).value=tc.good||'';
     $('#textBad_'+mod.id).value=tc.bad||'';
     $('#textFocus_'+mod.id).value=tc.focus||'';
-    // 保存 tc id 用于更新
     window['_tcId_'+mod.id]=tc.id;
   }else{
-    // 创建空记录
     const {data:newTc}=await sb.from('text_content').insert({module_id:mod.id,user_id:currentUser.id,good:'',bad:'',focus:''}).select().single();
     if(newTc) window['_tcId_'+mod.id]=newTc.id;
   }
@@ -867,56 +1280,10 @@ async function saveText(modId){
   const focus=$('#textFocus_'+modId)?.value||'';
   const tcId=window['_tcId_'+modId];
   if(tcId){
-    await sb.from('text_content').update({good,bad,focus,updated_at:new Date().toISOString()}).eq('id',tcId);
+    await sb.from('text_content').update({good,bad,focus}).eq('id',tcId);
   }else{
     const {data:newTc}=await sb.from('text_content').insert({module_id:modId,user_id:currentUser.id,good,bad,focus}).select().single();
     if(newTc) window['_tcId_'+modId]=newTc.id;
-  }
-}
-
-// ========== 首次加载预设条目 ==========
-async function initDailyItems(){
-  const dailyMod=modulesCache.find(m=>m.name==='运营每日工作');
-  const checkMod=modulesCache.find(m=>m.name==='新品上架检查表');
-  if(!dailyMod) return;
-
-  // 检查是否已有今日数据
-  const today=TD();
-  const {data:existing}=await sb.from('items').select('id').eq('module_id',dailyMod.id).eq('user_id',currentUser.id).eq('date',today);
-  if(existing&&existing.length>0) return; // 已有数据，不重复插入
-
-  // 插入默认条目
-  const defaultDaily=[
-    {t:'找品上品（一天3款或公司产品）',n:'',b:'pending'},
-    {t:'查看昨日核心数据',n:'曝光/点击/转化/退款/差评',b:'pending'},
-    {t:'检查店铺健康分 & 违规提醒',n:'侵权/图片/标题/属性/延迟发货',b:'pending'},
-    {t:'查看官方活动 & 报名',n:'频道活动/秒杀/Flash Sale',b:'pending'},
-    {t:'检查库存（少于4天催发货）',n:'',b:'pending'},
-    {t:'查看质量工单 & 及时修改',n:'',b:'pending'},
-    {t:'处理差评（申诉/记录/反馈工厂）',n:'高差评率做表找原因',b:'pending'},
-    {t:'检查流量下滑商品',n:'',b:'pending'},
-    {t:'检查缺货/断码商品',n:'',b:'pending'},
-    {t:'新品上架后报名营销打折',n:'',b:'pending'},
-    {t:'看市面爆款 & 找爆品',n:'',b:'pending'}
-  ];
-  await sb.from('items').insert(defaultDaily.map(d=>({...d,module_id:dailyMod.id,user_id:currentUser.id,date:today})));
-
-  if(checkMod){
-    const {data:checkExisting}=await sb.from('items').select('id').eq('module_id',checkMod.id).eq('user_id',currentUser.id).eq('date',today);
-    if(!checkExisting||checkExisting.length===0){
-      const defaultCheck=[
-        {t:'产品与实物一致性对比',n:'确保描述与实物匹配',b:'unchecked'},
-        {t:'图片高清 + 主图展示产品',n:'优先用长图',b:'unchecked'},
-        {t:'尺寸重量填写准确',n:'重量可少填10%',b:'unchecked'},
-        {t:'证书完整且一致',n:'',b:'unchecked'},
-        {t:'实拍图（有实物就实拍）',n:'',b:'unchecked'},
-        {t:'说明书填写正确',n:'',b:'unchecked'},
-        {t:'店小秘参数准确',n:'',b:'unchecked'},
-        {t:'上架违规词检查',n:'逐图检查安全词',b:'unchecked'},
-        {t:'待上架证书和实拍图审核',n:'确认通过后再上架',b:'unchecked'}
-      ];
-      await sb.from('items').insert(defaultCheck.map(d=>({...d,module_id:checkMod.id,user_id:currentUser.id,date:today})));
-    }
   }
 }
 
@@ -926,7 +1293,6 @@ sb?.auth.onAuthStateChange(async(event,session)=>{
     currentUser=session.user;
     await loadProfile();
     enterApp();
-    await initDailyItems(); // 首次加载预设条目
   }else{
     currentUser=null;
     $('#loginPage').style.display='flex';
@@ -942,7 +1308,6 @@ sb?.auth.onAuthStateChange(async(event,session)=>{
     currentUser=session.user;
     await loadProfile();
     enterApp();
-    await initDailyItems();
   }
 })();
 </script>
