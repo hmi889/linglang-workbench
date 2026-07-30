@@ -724,7 +724,7 @@ async function addModule(){
   const icon=prompt('图标（emoji）：','📌');
   const type=prompt('类型：1=列表 2=文本','1');
   const mt=type==='2'?'text':'list';
-  const rule=prompt('规则：1=普通 2=每日刷新 3=检查表','1');
+  const rule=prompt('选择模块规则：\n1 = 普通（如今日计划，自由增删，不按日期刷新）\n2 = 每日刷新（如运营每日工作，种子条目每天重置）\n3 = 检查表（如新品上架检查表，不可删除，打勾变暗）','1');
   const ruleVal={'1':'normal','2':'daily','3':'checklist'}[rule]||'normal';
   const bc=mt==='list'?(ruleVal==='checklist'?'unchecked,checked':'pending,progress,done'):'';
   const bl=mt==='list'?(ruleVal==='checklist'?'未检查,已检查':'待处理,进行中,已完成'):'';
@@ -1116,20 +1116,17 @@ function renderManagerChecklist(mod, allItems, ops){
     </div>`;
   });
 
-  // 下方：每个运营的检查条目详情
-  html+='<div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px"><div class="card-sub" style="font-weight:600">📝 详细内容</div></div>';
-  ops.forEach(op=>{
-    const myItems=allItems.filter(i=>i.user_id===op.id);
-    if(myItems.length===0) return;
-    html+=`<div style="margin-top:16px"><text class="section-title">${op.display_name?.charAt(0)||'👤'} ${esc(op.display_name||op.id.slice(0,8))}</text></div>`;
-    myItems.forEach(it=>{
-      const isC=it.badge==='checked';
-      html+=`<div class="check-item${isC?' checked':''}" style="margin-bottom:6px">
-        <div class="check-box${isC?' done':''}">${isC?'✓':''}</div>
-        <div class="ci-body"><div class="ci-title">${esc(it.title)}</div>${it.note?`<div class="ci-note">${esc(it.note)}</div>`:''}</div>
+  // 下方：模块默认内容（种子条目）
+  const seeds=mod.seed_content?JSON.parse(mod.seed_content):[];
+  if(seeds.length>0){
+    html+='<div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px"><div class="card-sub" style="font-weight:600">📋 检查表默认内容</div></div>';
+    seeds.forEach(s=>{
+      html+=`<div class="check-item" style="margin-bottom:6px">
+        <div class="check-box">☐</div>
+        <div class="ci-body"><div class="ci-title">${esc(s.title)}</div>${s.note?`<div class="ci-note">${esc(s.note)}</div>`:''}</div>
       </div>`;
     });
-  });
+  }
 
   listEl.innerHTML=html;
 }
@@ -1203,26 +1200,19 @@ function renderManagerList(mod,allItems,ops,cycles,labels,today){
     </div>`;
   });
 
-  // 下方：每个运营的条目详情
-  html+='<div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px"><div class="card-sub" style="font-weight:600">📝 详细内容</div></div>';
-  ops.forEach(op=>{
-    const myItems=allItems.filter(i=>i.user_id===op.id);
-    if(myItems.length===0) return;
-    html+=`<div style="margin-top:16px"><text class="section-title">${op.display_name?.charAt(0)||'👤'} ${esc(op.display_name||op.id.slice(0,8))}</text></div>`;
-    myItems.forEach(it=>{
-      const bc=badgeClassMap[it.badge]||'badge-pending';
-      const bt=labels[cycles.indexOf(it.badge)]||it.badge;
-      const ti=thumbIcons[it.badge]||mod.icon;
-      const isDone=it.badge===doneIdx?true:false;
-      html+=`<div class="li" style="${isDone?'opacity:.7':''}">
-        <div class="thumb">${ti}</div>
-        <div class="meta"><div class="name" style="${isDone?'text-decoration:line-through;color:var(--muted)':''}">${esc(it.title)}${it.is_seed?'':' <span style="font-size:11px;color:var(--blue)">自定义</span>'}</div>
-        ${it.note?`<div class="desc">${esc(it.note)}</div>`:''}
-        <div class="badges"><span class="badge ${bc}">${esc(bt)}</span></div>
-      </div>
+  // 下方：模块默认内容（种子条目）
+  const seeds=mod.seed_content?JSON.parse(mod.seed_content):[];
+  if(seeds.length>0){
+    html+='<div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px"><div class="card-sub" style="font-weight:600">📋 模块默认内容</div></div>';
+    seeds.forEach(s=>{
+      html+=`<div class="li">
+        <div class="thumb">${mod.icon}</div>
+        <div class="meta"><div class="name">${esc(s.title)}</div>
+        ${s.note?`<div class="desc">${esc(s.note)}</div>`:''}
+        </div>
       </div>`;
     });
-  });
+  }
 
   listEl.innerHTML=html;
 }
