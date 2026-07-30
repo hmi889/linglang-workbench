@@ -422,22 +422,23 @@ async function initModuleItems(){
     if(rule==='daily'){
       const useStores=mod.use_stores===true;
       if(useStores){
-        // 按店铺创建每日种子条目（类似 checklist 逻辑）
+        // 按店铺创建每日种子条目
         const myStores=storesCache.filter(s=>storeOpsCache.some(so=>so.store_id===s.id && so.operator_id===currentUser.id));
         console.log(`[init] daily+stores "${mod.name}" 分配店铺 ${myStores.length} 个`);
         if(myStores.length===0){
-          // 无分配店铺，退回无店铺模式
-          const {data:existing,error:e1}=await sb.from('items').select('id')
+          // 无分配店铺 — 不创建任何条目，页面显示"待分配店铺"
+          console.log(`[init] daily+stores "${mod.name}" 无店铺，跳过创建`);
+          // 清理可能存在的旧 null-store 种子条目（之前创建的）
+          await sb.from('items').delete()
             .eq('module_id',mod.id).eq('user_id',currentUser.id)
-            .eq('date',today).eq('is_seed',true).is('store_id',null);
-          if(e1){console.error('[init] daily+stores无店铺查询失败:',e1);continue;}
-          if((!existing||existing.length===0) && seeds.length>0){
-            const inserts=seeds.map(s=>({module_id:mod.id,user_id:currentUser.id,title:s.title,note:s.note||'',badge:'progress',date:today,is_seed:true,store_id:null}));
-            const {error:e2}=await sb.from('items').insert(inserts);
-            if(e2){console.error('[init] daily+stores无店铺插入失败:',e2);continue;}
-            console.log(`[init] daily+stores "${mod.name}" 无店铺创建 ${inserts.length} 条`);
-          }
+            .eq('is_seed',true).is('store_id',null);
         }else{
+          // 有分配店铺 — 先清理旧的 null-store 种子条目（防止重复）
+          const {error:delErr}=await sb.from('items').delete()
+            .eq('module_id',mod.id).eq('user_id',currentUser.id)
+            .eq('is_seed',true).is('store_id',null);
+          if(delErr){console.error('[init] daily+stores清理null条目失败:',delErr);}
+
           for(const store of myStores){
             const {data:existing,error:e1}=await sb.from('items').select('id')
               .eq('module_id',mod.id).eq('user_id',currentUser.id)
@@ -1117,16 +1118,37 @@ function renderListModule(mod){
   const labels=mod.badge_labels?mod.badge_labels.split(','):cycles;
   const selOptions=cycles.map((c,i)=>`<option value="${c}">${esc(labels[i])}</option>`).join('');
 
-  // 店铺标签（运营角色 + 启用店铺分页 + 有分配店铺）
+  // 店铺标签（运营角色 + 启用店铺分页）
   let storeTabsHtml='';
+  let noStoreAssigned=false;
   if(useStores && isOperator){
     const myStores=storesCache.filter(s=>storeOpsCache.some(so=>so.store_id===s.id && so.operator_id===currentUser.id));
-    if(myStores.length>0){
+    if(myStores.length===0){
+      // 没有分配店铺 — 显示提示
+      noStoreAssigned=true;
+    }else if(myStores.length===1){
+      // 只有一个店铺 — 不显示标签，直接显示该店铺
+      storeTabsHtml='';
+    }else{
+      // 多个店铺 — 显示标签，无"全部"选项，默认选第一个
       storeTabsHtml=`<div class="store-tabs" id="storeTabs_${mod.id}">
-        <div class="store-tab active" onclick="switchStore('${mod.id}','all')">全部</div>
-        ${myStores.map(s=>`<div class="store-tab" data-store="${s.id}" onclick="switchStore('${mod.id}','${s.id}')">${esc(s.name)}</div>`).join('')}
+        ${myStores.map((s,idx)=>`<div class="store-tab${idx===0?' active':''}" data-store="${s.id}" onclick="switchStore('${mod.id}','${s.id}')">${esc(s.name)}</div>`).join('')}
       </div>`;
     }
+  }
+
+  // 无分配店铺时显示提示
+  if(noStoreAssigned){
+    return `<section class="module" id="mod_${mod.id}">
+      <div class="card">
+        <div class="card-title"><span class="emoji">${mod.icon}</span>${esc(mod.name)}</div>
+        <div class="empty" style="padding:40px 20px;text-align:center;color:var(--muted)">
+          <div style="font-size:36px;margin-bottom:12px">🏪</div>
+          <div style="font-size:15px;font-weight:500;margin-bottom:6px">待分配店铺</div>
+          <div style="font-size:13px">请联系管理者为您分配店铺后查看每日工作</div>
+        </div>
+      </div>
+    </section>`;
   }
 
   // 运营只有普通模块可以添加条目；每日工作和检查表内容由管理者定义，运营不可编辑
@@ -1184,9 +1206,7 @@ function switchStore(modId, storeId){
   activeStoreId=storeId;
   // 更新标签高亮
   $$('#storeTabs_'+modId+' .store-tab').forEach(t=>t.classList.remove('active'));
-  const target=storeId==='all'
-    ?$('#storeTabs_'+modId+' .store-tab:first-child')
-    :$('#storeTabs_'+modId+' .store-tab[data-store="'+storeId+'"]');
+  const target=$('#storeTabs_'+modId+' .store-tab[data-store="'+storeId+'"]');
   if(target) target.classList.add('active');
   // 刷新数据（根据模块规则路由）
   const mod=modulesCache.find(m=>m.id===modId);
@@ -1212,8 +1232,20 @@ async function loadListData(mod){
     if(rule==='daily'){
       query=query.eq('date',today);
     }
-    if(useStores && activeStoreId!=='all'){
-      query=query.eq('store_id',activeStoreId);
+    if(useStores){
+      // 启用店铺分页 — 确定当前查看的店铺
+      const myStores=storesCache.filter(s=>storeOpsCache.some(so=>so.store_id===s.id && so.operator_id===currentUser.id));
+      if(myStores.length===0){
+        // 无店铺，不查数据
+        renderOperatorList(mod,[],cycles,labels,today,rule);
+        return;
+      }
+      let storeId=activeStoreId;
+      if(!storeId || storeId==='all' || !myStores.some(s=>s.id===storeId)){
+        storeId=myStores[0].id; // 默认第一个店铺
+        activeStoreId=storeId;
+      }
+      query=query.eq('store_id',storeId);
     }
     const {data:items}=await query;
     renderOperatorList(mod,items||[],cycles,labels,today,rule);
@@ -1371,7 +1403,9 @@ function renderOperatorList(mod,items,cycles,labels,today,rule){
 
   const counts=cycles.map(c=>({count:items.filter(i=>i.badge===c).length,label:labels[cycles.indexOf(c)]}));
   const colors=['color:var(--blue)','color:var(--primary)'];
-  $('#listStats_'+mod.id).innerHTML=counts.map((c,i)=>`<div class="stat"><div class="num" style="${colors[i]||''}">${c.count}</div><div class="label">${esc(c.label)}</div></div>`).join('');
+  let statsHtml=counts.map((c,i)=>`<div class="stat"><div class="num" style="${colors[i]||''}">${c.count}</div><div class="label">${esc(c.label)}</div></div>`).join('');
+  statsHtml+=`<div class="stat"><div class="num" style="color:var(--muted)">${total}</div><div class="label">总条目</div></div>`;
+  $('#listStats_'+mod.id).innerHTML=statsHtml;
   $('#listProg_'+mod.id).style.width=pct+'%';
   $('#listProgLabel_'+mod.id).textContent=`完成进度：${pct}%（${done}/${total}）`;
 
@@ -1410,7 +1444,9 @@ function renderManagerList(mod,allItems,ops,cycles,labels,today){
   const pct=totalAll?Math.round(totalDone/totalAll*100):0;
 
   const counts=cycles.map(c=>({count:allItems.filter(i=>i.badge===c).length,label:labels[cycles.indexOf(c)]}));
-  $('#listStats_'+mod.id).innerHTML=counts.map((c,i)=>`<div class="stat"><div class="num">${c.count}</div><div class="label">${esc(c.label)}</div></div>`).join('');
+  let statsHtml=counts.map((c,i)=>`<div class="stat"><div class="num">${c.count}</div><div class="label">${esc(c.label)}</div></div>`).join('');
+  statsHtml+=`<div class="stat"><div class="num" style="color:var(--muted)">${totalAll}</div><div class="label">总条目</div></div>`;
+  $('#listStats_'+mod.id).innerHTML=statsHtml;
   $('#listProg_'+mod.id).style.width=pct+'%';
   $('#listProgLabel_'+mod.id).textContent=`团队完成进度：${pct}%（${totalDone}/${totalAll}）`;
 
@@ -1465,8 +1501,14 @@ async function addItem(modId){
   if(rule==='daily'){
     itemData.date=TD();
   }
-  if(useStores && activeStoreId!=='all'){
-    itemData.store_id=activeStoreId;
+  if(useStores){
+    // 启用店铺分页 — 确定当前店铺
+    const myStores=storesCache.filter(s=>storeOpsCache.some(so=>so.store_id===s.id && so.operator_id===currentUser.id));
+    let storeId=activeStoreId;
+    if(!storeId || storeId==='all' || !myStores.some(s=>s.id===storeId)){
+      storeId=myStores[0]?.id||null;
+    }
+    itemData.store_id=storeId;
   }
   await sb.from('items').insert(itemData);
   $('#addInput_'+modId).value='';
