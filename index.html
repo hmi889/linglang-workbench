@@ -208,12 +208,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue"
 
 <script>
 // ========== Supabase 初始化（SDK 已内嵌，同步可用） ==========
+// ⚠️ 注意：SDK 在前一个 <script> 里已声明 var supabase（全局命名空间）
+// 这里不能用 let/var 再声明同名变量，否则 SyntaxError 导致整个脚本崩溃
+// 所以用 sb 存放 client 实例，所有业务调用用 sb.xxx
 const SUPABASE_URL = 'https://olgfsnnbiundeudsexot.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sZ2Zzbm5iaXVuZGV1ZHNleG90Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzOTI5OTAsImV4cCI6MjEwMDk2ODk5MH0.Hsc4YfzDFllyJsZeecfZVuwk7six0Bgn_zwM1tcrrwo';
 
-let supabase;
+let sb;
 try {
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 } catch(e) {
   console.error('Supabase init failed:', e);
 }
@@ -230,9 +233,9 @@ const TD=()=>new Date().toISOString().slice(0,10);
 
 // ========== 页面加载后自动检查登录状态 ==========
 window.addEventListener('DOMContentLoaded', async ()=>{
-  if(!supabase) return;
+  if(!sb) return;
   try {
-    const {data:{session}} = await supabase.auth.getSession();
+    const {data:{session}} = await sb.auth.getSession();
     if(session && session.user){
       currentUser = session.user;
       await loadProfile();
@@ -256,7 +259,7 @@ function toggleAuthMode(){
 }
 
 async function doLogin(){
-  if(!supabase) {
+  if(!sb) {
     $('#loginError').textContent = '⚠️ Supabase 初始化失败，请检查配置';
     return;
   }
@@ -273,7 +276,7 @@ async function doLogin(){
   try {
     let result;
     if(isRegisterMode){
-      result=await supabase.auth.signUp({email,password:pass});
+      result=await sb.auth.signUp({email,password:pass});
       if(result.error){$('#loginError').textContent=result.error.message;btn.disabled=false;btn.textContent='注册';return}
       // 注册成功后自动触发 handle_new_user 创建 profile
       // 检查是否需要邮箱确认
@@ -296,7 +299,7 @@ async function doLogin(){
       btn.disabled=false;btn.textContent='登录';
       return;
     }else{
-      result=await supabase.auth.signInWithPassword({email,password:pass});
+      result=await sb.auth.signInWithPassword({email,password:pass});
       if(result.error){$('#loginError').textContent=result.error.message;btn.disabled=false;btn.textContent='登录';return}
     }
     currentUser=result.data.user;
@@ -310,14 +313,14 @@ async function doLogin(){
 }
 
 async function loadProfile(){
-  const {data}=await supabase.from('profiles').select('*').eq('id',currentUser.id).single();
+  const {data}=await sb.from('profiles').select('*').eq('id',currentUser.id).single();
   if(data){
     currentRole=data.role;
     currentUser.displayName=data.display_name;
   }else{
     // profile 可能还没创建（trigger延迟），等一下再试
     await new Promise(r=>setTimeout(r,1000));
-    const {data:d2}=await supabase.from('profiles').select('*').eq('id',currentUser.id).single();
+    const {data:d2}=await sb.from('profiles').select('*').eq('id',currentUser.id).single();
     if(d2){currentRole=d2.role;currentUser.displayName=d2.display_name;}
   }
 }
@@ -329,7 +332,7 @@ function enterApp(){
 }
 
 async function loadModules(){
-  const {data}=await supabase.from('modules').select('*').order('sort_order');
+  const {data}=await sb.from('modules').select('*').order('sort_order');
   modulesCache=data||[];
   if(!activeModId) activeModId=modulesCache.find(m=>m.name==='运营每日工作')?.id||modulesCache[0]?.id||'';
   renderSidebar();
@@ -430,14 +433,14 @@ function renderDashboard(){
 
 async function loadDashboardData(){
   // 获取所有运营 profile
-  const {data:operators}=await supabase.from('profiles').select('*').eq('role','operator');
+  const {data:operators}=await sb.from('profiles').select('*').eq('role','operator');
   if(!operators) return;
 
   $('#dsTotalOps').textContent=operators.length;
 
   // 获取所有运营今日的 items
   const today=TD();
-  const {data:allItems}=await supabase.from('items').select('user_id, badge, module_id').eq('date',today);
+  const {data:allItems}=await sb.from('items').select('user_id, badge, module_id').eq('date',today);
 
   // 计算每个运营的完成率（基于"运营每日工作"模块）
   const dailyMod=modulesCache.find(m=>m.name==='运营每日工作');
@@ -478,7 +481,7 @@ async function viewUserDetail(userId, userName){
   if(!mod) return;
 
   const today=TD();
-  const {data:items}=await supabase.from('items').select('*').eq('module_id',mod.id).eq('user_id',userId).eq('date',today);
+  const {data:items}=await sb.from('items').select('*').eq('module_id',mod.id).eq('user_id',userId).eq('date',today);
 
   const done=(items||[]).filter(i=>i.badge==='done').length;
   const prog=(items||[]).filter(i=>i.badge==='progress').length;
@@ -561,7 +564,7 @@ function renderManagerSettings(){
 
 async function loadSettingsData(){
   // 人员管理
-  const {data:users}=await supabase.from('profiles').select('*');
+  const {data:users}=await sb.from('profiles').select('*');
   const umList=$('#userMgmtList');
   umList.innerHTML='';
   (users||[]).forEach(u=>{
@@ -592,7 +595,7 @@ async function loadSettingsData(){
 
 async function toggleRole(userId, currentRole){
   const newRole=currentRole==='manager'?'operator':'manager';
-  await supabase.from('profiles').update({role:newRole}).eq('id',userId);
+  await sb.from('profiles').update({role:newRole}).eq('id',userId);
   loadSettingsData();
   if(userId===currentUser.id){currentRole=newRole;renderSidebar();}
 }
@@ -605,7 +608,7 @@ async function addModule(){
   const bc=mt==='list'?(prompt('徽章流程（逗号分隔）：','pending,progress,done')||'pending,progress,done'):'';
   const bl=mt==='list'?(prompt('徽章标签（逗号分隔）：','待处理,进行中,已完成')||'待处理,进行中,已完成'):'';
   const maxSort=modulesCache.reduce((mx,m)=>Math.max(mx,m.sort_order||0),0);
-  await supabase.from('modules').insert({icon:icon||'📌',name:name.trim(),type:mt,badge_cycle:bc,badge_labels:bl,sort_order:maxSort+1});
+  await sb.from('modules').insert({icon:icon||'📌',name:name.trim(),type:mt,badge_cycle:bc,badge_labels:bl,sort_order:maxSort+1});
   await loadModules();
   activeModId='settings';renderSidebar();renderContent();
 }
@@ -614,28 +617,28 @@ async function editModule(modId){
   const mod=modulesCache.find(m=>m.id===modId);
   const newName=prompt('名称：',mod.name);if(!newName) return;
   const newIcon=prompt('图标：',mod.icon);
-  await supabase.from('modules').update({name:newName.trim(),icon:newIcon||mod.icon}).eq('id',modId);
+  await sb.from('modules').update({name:newName.trim(),icon:newIcon||mod.icon}).eq('id',modId);
   await loadModules();
   activeModId='settings';renderSidebar();renderContent();
 }
 
 async function delModule(modId){
   if(!confirm('删除模块？所有运营的该模块数据也会删除！')) return;
-  await supabase.from('modules').delete().eq('id',modId);
+  await sb.from('modules').delete().eq('id',modId);
   await loadModules();
   activeModId='settings';renderSidebar();renderContent();
 }
 
 async function exportTeamData(){
-  const {data:items}=await supabase.from('items').select('*');
-  const {data:texts}=await supabase.from('text_content').select('*');
+  const {data:items}=await sb.from('items').select('*');
+  const {data:texts}=await sb.from('text_content').select('*');
   const blob=new Blob([JSON.stringify({modules:modulesCache,items,texts},null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`team-backup-${TD()}.json`;a.click();
 }
 
 async function clearMyData(){
   if(!confirm('清空你的所有条目数据？')) return;
-  await supabase.from('items').delete().eq('user_id',currentUser.id);
+  await sb.from('items').delete().eq('user_id',currentUser.id);
   renderContent();
 }
 
@@ -659,13 +662,13 @@ function renderOperatorSettings(){
 async function updateDisplayName(){
   const v=$('#opDisplayName')?.value||'';
   currentUser.displayName=v;
-  await supabase.from('profiles').update({display_name:v}).eq('id',currentUser.id);
+  await sb.from('profiles').update({display_name:v}).eq('id',currentUser.id);
   renderSidebar();
 }
 
 async function exportMyData(){
-  const {data:items}=await supabase.from('items').select('*').eq('user_id',currentUser.id);
-  const {data:texts}=await supabase.from('text_content').select('*').eq('user_id',currentUser.id);
+  const {data:items}=await sb.from('items').select('*').eq('user_id',currentUser.id);
+  const {data:texts}=await sb.from('text_content').select('*').eq('user_id',currentUser.id);
   const blob=new Blob([JSON.stringify({items,texts},null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`my-backup-${TD()}.json`;a.click();
 }
@@ -702,12 +705,12 @@ async function loadListData(mod){
 
   if(currentRole==='operator'){
     // 运营只看自己的数据
-    const {data:items}=await supabase.from('items').select('*').eq('module_id',mod.id).eq('user_id',currentUser.id).eq('date',today);
+    const {data:items}=await sb.from('items').select('*').eq('module_id',mod.id).eq('user_id',currentUser.id).eq('date',today);
     renderOperatorList(mod,items||[],cycles,labels,today);
   }else{
     // 管理者看所有人的汇总
-    const {data:items}=await supabase.from('items').select('*').eq('module_id',mod.id).eq('date',today);
-    const {data:ops}=await supabase.from('profiles').select('id,display_name').eq('role','operator');
+    const {data:items}=await sb.from('items').select('*').eq('module_id',mod.id).eq('date',today);
+    const {data:ops}=await sb.from('profiles').select('id,display_name').eq('role','operator');
     renderManagerList(mod,items||[],ops||[],cycles,labels,today);
   }
 }
@@ -785,7 +788,7 @@ async function addItem(modId){
   const v=$('#addInput_'+modId).value.trim();if(!v) return;
   const bEl=$('#addBadge_'+modId);
   const b=bEl?bEl.value:'pending';
-  await supabase.from('items').insert({module_id:modId,user_id:currentUser.id,title:v,note:'',badge:b,date:TD()});
+  await sb.from('items').insert({module_id:modId,user_id:currentUser.id,title:v,note:'',badge:b,date:TD()});
   $('#addInput_'+modId).value='';
   const mod=modulesCache.find(m=>m.id===modId);
   loadListData(mod);
@@ -795,21 +798,21 @@ async function cycleBadge(modId,itemId){
   const mod=modulesCache.find(m=>m.id===modId);
   const cycles=mod.badge_cycle.split(',');
   // 先获取当前 badge
-  const {data:item}=await supabase.from('items').select('badge').eq('id',itemId).single();
+  const {data:item}=await sb.from('items').select('badge').eq('id',itemId).single();
   if(!item) return;
   const cur=cycles.indexOf(item.badge);
   const next=cycles[(cur+1)%cycles.length];
-  await supabase.from('items').update({badge:next,updated_at:new Date().toISOString()}).eq('id',itemId);
+  await sb.from('items').update({badge:next,updated_at:new Date().toISOString()}).eq('id',itemId);
   loadListData(mod);
 }
 
 async function editItem(itemId){
-  const {data:item}=await supabase.from('items').select('*').eq('id',itemId).single();
+  const {data:item}=await sb.from('items').select('*').eq('id',itemId).single();
   if(!item) return;
   const newT=prompt('编辑条目：',item.title);
   if(newT!==null&&newT.trim()){
     const newN=prompt('备注：',item.note||'');
-    await supabase.from('items').update({title:newT.trim(),note:newN||'',updated_at:new Date().toISOString()}).eq('id',itemId);
+    await sb.from('items').update({title:newT.trim(),note:newN||'',updated_at:new Date().toISOString()}).eq('id',itemId);
     const mod=modulesCache.find(m=>m.id===item.module_id);
     if(mod) loadListData(mod);
   }
@@ -817,7 +820,7 @@ async function editItem(itemId){
 
 async function delItem(itemId,modId){
   if(!confirm('删除此条目？')) return;
-  await supabase.from('items').delete().eq('id',itemId);
+  await sb.from('items').delete().eq('id',itemId);
   const mod=modulesCache.find(m=>m.id===modId);
   if(mod) loadListData(mod);
 }
@@ -844,7 +847,7 @@ function renderTextModule(mod){
 }
 
 async function loadTextData(mod){
-  const {data:tc}=await supabase.from('text_content').select('*').eq('module_id',mod.id).eq('user_id',currentUser.id).maybeSingle();
+  const {data:tc}=await sb.from('text_content').select('*').eq('module_id',mod.id).eq('user_id',currentUser.id).maybeSingle();
   if(tc){
     $('#textGood_'+mod.id).value=tc.good||'';
     $('#textBad_'+mod.id).value=tc.bad||'';
@@ -853,7 +856,7 @@ async function loadTextData(mod){
     window['_tcId_'+mod.id]=tc.id;
   }else{
     // 创建空记录
-    const {data:newTc}=await supabase.from('text_content').insert({module_id:mod.id,user_id:currentUser.id,good:'',bad:'',focus:''}).select().single();
+    const {data:newTc}=await sb.from('text_content').insert({module_id:mod.id,user_id:currentUser.id,good:'',bad:'',focus:''}).select().single();
     if(newTc) window['_tcId_'+mod.id]=newTc.id;
   }
 }
@@ -864,9 +867,9 @@ async function saveText(modId){
   const focus=$('#textFocus_'+modId)?.value||'';
   const tcId=window['_tcId_'+modId];
   if(tcId){
-    await supabase.from('text_content').update({good,bad,focus,updated_at:new Date().toISOString()}).eq('id',tcId);
+    await sb.from('text_content').update({good,bad,focus,updated_at:new Date().toISOString()}).eq('id',tcId);
   }else{
-    const {data:newTc}=await supabase.from('text_content').insert({module_id:modId,user_id:currentUser.id,good,bad,focus}).select().single();
+    const {data:newTc}=await sb.from('text_content').insert({module_id:modId,user_id:currentUser.id,good,bad,focus}).select().single();
     if(newTc) window['_tcId_'+modId]=newTc.id;
   }
 }
@@ -879,7 +882,7 @@ async function initDailyItems(){
 
   // 检查是否已有今日数据
   const today=TD();
-  const {data:existing}=await supabase.from('items').select('id').eq('module_id',dailyMod.id).eq('user_id',currentUser.id).eq('date',today);
+  const {data:existing}=await sb.from('items').select('id').eq('module_id',dailyMod.id).eq('user_id',currentUser.id).eq('date',today);
   if(existing&&existing.length>0) return; // 已有数据，不重复插入
 
   // 插入默认条目
@@ -896,10 +899,10 @@ async function initDailyItems(){
     {t:'新品上架后报名营销打折',n:'',b:'pending'},
     {t:'看市面爆款 & 找爆品',n:'',b:'pending'}
   ];
-  await supabase.from('items').insert(defaultDaily.map(d=>({...d,module_id:dailyMod.id,user_id:currentUser.id,date:today})));
+  await sb.from('items').insert(defaultDaily.map(d=>({...d,module_id:dailyMod.id,user_id:currentUser.id,date:today})));
 
   if(checkMod){
-    const {data:checkExisting}=await supabase.from('items').select('id').eq('module_id',checkMod.id).eq('user_id',currentUser.id).eq('date',today);
+    const {data:checkExisting}=await sb.from('items').select('id').eq('module_id',checkMod.id).eq('user_id',currentUser.id).eq('date',today);
     if(!checkExisting||checkExisting.length===0){
       const defaultCheck=[
         {t:'产品与实物一致性对比',n:'确保描述与实物匹配',b:'unchecked'},
@@ -912,13 +915,13 @@ async function initDailyItems(){
         {t:'上架违规词检查',n:'逐图检查安全词',b:'unchecked'},
         {t:'待上架证书和实拍图审核',n:'确认通过后再上架',b:'unchecked'}
       ];
-      await supabase.from('items').insert(defaultCheck.map(d=>({...d,module_id:checkMod.id,user_id:currentUser.id,date:today})));
+      await sb.from('items').insert(defaultCheck.map(d=>({...d,module_id:checkMod.id,user_id:currentUser.id,date:today})));
     }
   }
 }
 
 // ========== 启动流程 ==========
-supabase?.auth.onAuthStateChange(async(event,session)=>{
+sb?.auth.onAuthStateChange(async(event,session)=>{
   if(session?.user){
     currentUser=session.user;
     await loadProfile();
@@ -933,8 +936,8 @@ supabase?.auth.onAuthStateChange(async(event,session)=>{
 
 // 检查是否已有登录态
 (async()=>{
-  if(!supabase) return;
-  const {data:{session}}=await supabase.auth.getSession();
+  if(!sb) return;
+  const {data:{session}}=await sb.auth.getSession();
   if(session?.user){
     currentUser=session.user;
     await loadProfile();
