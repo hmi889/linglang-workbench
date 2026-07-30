@@ -3,31 +3,70 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#4a7c59">
-<title>凌琅科技工作台</title>
+<title>凌琅科技工作台 · 团队版</title>
+<script>
+// ========== Supabase SDK 异步加载（国内 CDN 优先 + 备用） ==========
+window.__sbLoaded = false;
+window.__sbError = '';
+
+function loadSdk(){
+  // 尝试国内 CDN（BootCDN）
+  var s1=document.createElement('script');
+  s1.src='https://cdn.bootcdn.net/ajax/libs/supabase-js/2.49.4/supabase.min.js';
+  s1.onload=function(){window.__sbLoaded=true;initApp();};
+  s1.onerror=function(){
+    // 备用：jsdelivr
+    var s2=document.createElement('script');
+    s2.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+    s2.onload=function(){window.__sbLoaded=true;initApp();};
+    s2.onerror=function(){
+      // 再备用：unpkg
+      var s3=document.createElement('script');
+      s3.src='https://unpkg.com/@supabase/supabase-js@2';
+      s3.onload=function(){window.__sbLoaded=true;initApp();};
+      s3.onerror=function(){
+        window.__sbError='所有CDN均加载失败';
+        showLoginError('⚠️ Supabase SDK 加载失败（CDN不可达），请检查网络或刷新页面');
+      };
+      document.head.appendChild(s3);
+    };
+    document.head.appendChild(s2);
+  };
+  document.head.appendChild(s1);
+}
+loadSdk();
+</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-:root{
-  --primary:#4a7c59;--primary-dk:#3a6347;--light:#7ab88a;--pale:#d4e2cf;
-  --cream:#f5f2e8;--card:#fff;--text:#2c3e2d;--muted:#7a8a7a;
-  --border:#e2dfd4;--shadow:0 2px 10px rgba(0,0,0,.05);
-  --red:#e74c3c;--orange:#f39c12;--blue:#3b82f6;
-}
+:root{--primary:#4a7c59;--primary-dk:#3a6347;--light:#7ab88a;--pale:#d4e2cf;--cream:#f5f2e8;--card:#fff;--text:#2c3e2d;--muted:#7a8a7a;--border:#e2dfd4;--shadow:0 2px 10px rgba(0,0,0,.05);--red:#e74c3c;--orange:#f39c12;--blue:#3b82f6}
 html,body{height:100%}
-body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue","Microsoft YaHei",sans-serif;background:var(--cream);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue","Microsoft YaHei",sans-serif;background:var(--cream);color:var(--text);-webkit-font-smoothing:antialiased}
+
+/* ========== 登录页 ========== */
+.login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--pale)}
+.login-box{background:var(--card);border-radius:20px;padding:32px 28px;width:340px;box-shadow:0 4px 24px rgba(0,0,0,.08);text-align:center}
+.login-box h1{font-size:22px;margin-bottom:4px}
+.login-box .emoji{font-size:40px;margin-bottom:8px}
+.login-box .sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+.login-input{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:12px;font-size:14px;margin-bottom:10px;font-family:inherit;background:#fff}
+.login-input:focus{outline:none;border-color:var(--primary)}
+.login-btn{width:100%;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:10px}
+.login-btn:hover{background:var(--primary-dk)}
+.login-switch{font-size:13px;color:var(--muted);cursor:pointer}
+.login-switch a{color:var(--primary);text-decoration:none}
+.login-error{color:var(--red);font-size:13px;margin-bottom:8px;min-height:18px}
+
+/* ========== 主应用 ========== */
 .app{display:flex;min-height:100vh}
 
-/* ========== 侧边栏 ========== */
-.sidebar{
-  width:220px;background:var(--pale);position:fixed;top:0;left:0;height:100vh;
-  display:flex;flex-direction:column;padding:18px 0 14px;z-index:80;transition:left .3s;
-}
+/* 侧边栏 */
+.sidebar{width:220px;background:var(--pale);position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;padding:18px 0 14px;z-index:80;transition:left .3s}
 .sb-hd{text-align:center;padding:6px 16px 16px;border-bottom:1px solid rgba(0,0,0,.06);margin-bottom:10px}
 .sb-hd .emoji{font-size:28px}
 .sb-hd .title{font-size:15px;font-weight:700;margin-top:2px;letter-spacing:.5px}
 .sb-hd .sub{font-size:11px;color:var(--muted);margin-top:2px}
+.sb-hd .role-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:6px;margin-top:4px;background:#dbeafe;color:#1e40af}
+.sb-hd .role-badge.manager{background:#d1fae5;color:#065f46}
 .menu{flex:1;padding:0 12px;overflow-y:auto}
 .mi{display:flex;flex-direction:column;align-items:center;padding:10px 6px;margin-bottom:4px;border-radius:12px;cursor:pointer;transition:.2s;user-select:none}
 .mi:hover{background:rgba(255,255,255,.45)}
@@ -36,26 +75,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue"
 .mi .icon{font-size:22px;margin-bottom:3px}
 .mi .label{font-size:12px;font-weight:500}
 
-/* ========== 移动顶栏 ========== */
+/* 移动顶栏 */
 .mobile-hd{display:none;position:sticky;top:0;z-index:70;background:var(--pale);padding:10px 14px;align-items:center;box-shadow:0 1px 4px rgba(0,0,0,.05)}
 .hamburger{background:none;border:none;font-size:22px;cursor:pointer;padding:4px 8px;color:var(--text)}
 .m-title{flex:1;text-align:center;font-weight:600;font-size:15px}
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:75}
 .overlay.show{display:block}
 
-/* ========== 主内容 ========== */
-.content{flex:1;margin-left:220px;padding:24px 32px;max-width:780px;min-height:100vh}
+/* 主内容 */
+.content{flex:1;margin-left:220px;padding:24px 32px;max-width:900px;min-height:100vh}
 .module{display:none;animation:fadeUp .3s}
 .module.active{display:block}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
-/* ========== 卡片 ========== */
+/* 卡片 */
 .card{background:var(--card);border-radius:18px;padding:18px 20px;margin-bottom:16px;box-shadow:var(--shadow)}
 .card-title{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:600;margin-bottom:14px}
 .card-title .emoji{font-size:18px}
 .card-sub{font-size:12px;color:var(--muted);margin-bottom:12px}
 
-/* ========== 通用组件 ========== */
+/* 通用 */
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .btn{border:none;border-radius:12px;padding:10px 16px;font-size:14px;font-weight:500;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-family:inherit}
 .btn-p{background:var(--primary);color:#fff}
@@ -78,11 +117,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue"
 .badge-issue{background:#fee2e2;color:#991b1b}
 .empty{text-align:center;padding:28px 12px;color:var(--muted);font-size:13px}
 
-/* ========== 列表 ========== */
+/* 列表 */
 .list{display:flex;flex-direction:column;gap:10px}
 .li{display:flex;align-items:center;gap:12px;padding:12px;background:#fafaf3;border-radius:12px;transition:.15s}
 .li:hover{background:#f0ede4}
-.li .thumb{width:54px;height:54px;border-radius:10px;background:var(--pale);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.li .thumb{width:54px;height:54px;border-radius:10px;background:var(--pale);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;cursor:pointer}
 .li .meta{flex:1;min-width:0}
 .li .name{font-size:14px;font-weight:500}
 .li .desc{font-size:12px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -93,34 +132,48 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue"
 .icon-btn.del{color:var(--red)}
 .icon-btn.del:hover{background:#fee2e2}
 
-/* ========== 进度条 ========== */
+/* 进度条 */
 .progress-bar{height:8px;background:#f0ede4;border-radius:4px;margin:10px 0;overflow:hidden}
 .progress-bar .fill{height:100%;background:var(--primary);border-radius:4px;transition:width .4s}
 
-/* ========== 统计卡片 ========== */
+/* 统计卡片 */
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
 .stat{background:#fafaf3;border-radius:12px;padding:14px;text-align:center}
 .stat .num{font-size:24px;font-weight:700;color:var(--primary)}
 .stat .label{font-size:12px;color:var(--muted);margin-top:2px}
 
-/* ========== 设置 ========== */
+/* 设置 */
 .setting-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
 .setting-row:last-child{border-bottom:none}
 .setting-row .label{font-size:14px}
-.toggle{position:relative;width:46px;height:26px;background:#d4d4cc;border-radius:13px;cursor:pointer;transition:.2s}
-.toggle::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.2s}
-.toggle.on{background:var(--primary)}
-.toggle.on::after{left:23px}
-
-/* ========== 模块管理 ========== */
 .mod-card{background:#fafaf3;border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
 .mod-card .mod-icon{font-size:20px;width:32px;text-align:center}
 .mod-card .mod-info{flex:1;min-width:0}
 .mod-card .mod-name{font-size:14px;font-weight:500}
 .mod-card .mod-type{font-size:11px;color:var(--muted)}
-.mod-card .mod-actions{display:flex;gap:4px}
 
-/* ========== 移动端 ========== */
+/* 管理者仪表盘 */
+.dash-user-row{display:flex;align-items:center;padding:12px;background:#fafaf3;border-radius:12px;margin-bottom:8px;cursor:pointer;transition:.15s}
+.dash-user-row:hover{background:#f0ede4}
+.dash-user-row .user-avatar{width:40px;height:40px;border-radius:10px;background:var(--pale);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.dash-user-row .user-info{flex:1;min-width:0;margin-left:12px}
+.dash-user-row .user-name{font-size:14px;font-weight:500}
+.dash-user-row .user-stats{font-size:12px;color:var(--muted);margin-top:2px}
+.dash-user-row .user-pct{font-size:18px;font-weight:700;color:var(--primary);flex-shrink:0;margin-right:8px}
+.section-title{font-size:13px;font-weight:600;color:var(--primary);margin-bottom:8px;margin-top:16px}
+.user-detail-bar{height:6px;background:#f0ede4;border-radius:3px;margin:4px 0}
+
+/* 管理者查看单个运营详情 */
+.back-btn{background:none;border:none;cursor:pointer;font-size:14px;color:var(--primary);padding:4px 8px;margin-bottom:16px;font-family:inherit;display:inline-flex;align-items:center;gap:4px}
+
+/* 用户管理 */
+.user-mgmt-row{display:flex;align-items:center;padding:10px 12px;background:#fafaf3;border-radius:12px;margin-bottom:6px}
+.user-mgmt-row .um-name{flex:1;font-size:14px}
+.user-mgmt-row .um-role{font-size:12px;padding:2px 8px;border-radius:6px}
+.um-role.operator{background:#dbeafe;color:#1e40af}
+.um-role.manager{background:#d1fae5;color:#065f46}
+.um-role-btn{background:#f0ede4;border:none;border-radius:8px;padding:4px 8px;font-size:12px;cursor:pointer;margin-left:6px}
+
 @media(max-width:768px){
   .mobile-hd{display:flex}
   .sidebar{left:-100%;padding-top:64px;box-shadow:4px 0 20px rgba(0,0,0,.1)}
@@ -133,6 +186,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue"
 </head>
 <body>
 
+<!-- ========== 登录页 ========== -->
+<div id="loginPage" class="login-page">
+  <div class="login-box">
+    <div class="emoji">🏢</div>
+    <h1>凌琅科技工作台</h1>
+    <div class="sub">团队协作版 · LingLang Team</div>
+    <div id="loginError" class="login-error"></div>
+    <div id="loginDebug" style="font-size:11px;color:#999;margin-bottom:6px;text-align:left;max-height:60px;overflow:auto;word-break:break-all"></div>
+    <input id="loginEmail" class="login-input" placeholder="邮箱" type="email">
+    <input id="loginPass" class="login-input" placeholder="密码（至少6位）" type="password">
+    <button id="loginBtn" class="login-btn" onclick="doLogin()">登录</button>
+    <div id="loginSwitch" class="login-switch">
+      还没有账号？<a onclick="toggleAuthMode()">注册</a>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 主应用 ========== -->
+<div id="mainApp" class="app" style="display:none">
 <div class="mobile-hd">
   <button class="hamburger" onclick="toggleSidebar()">☰</button>
   <div class="m-title" id="mTitle"></div>
@@ -140,488 +212,771 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue"
 </div>
 <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
 
-<div class="app">
 <aside class="sidebar" id="sidebar">
   <div class="sb-hd" id="sbHd"></div>
   <nav class="menu" id="menu"></nav>
 </aside>
 
-<main class="content" id="contentArea">
-<!-- 所有模块内容由 JS 动态生成 -->
-</main>
+<main class="content" id="contentArea"></main>
 </div>
 
 <script>
+// ========== Supabase 初始化 ==========
+const SUPABASE_URL = 'https://olgfsnnbiundeudsexot.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sZ2Zzbm5iaXVuZGV1ZHNleG90Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzOTI5OTAsImV4cCI6MjEwMDk2ODk5MH0.Hsc4YfzDFllyJsZeecfZVuwk7six0Bgn_zwM1tcrrwo';
+
+let supabase;
+let supabaseReady = false;
+const debugLog = (msg) => { const el=document.getElementById('loginDebug'); if(el) el.textContent += msg + '\n'; };
+function showLoginError(msg) { const el=document.getElementById('loginError'); if(el) el.textContent=msg; }
+
+// SDK 加载成功后回调（由 head 里的 loader 触发）
+function initApp(){
+  debugLog('SDK 已加载，正在初始化...');
+  try {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    supabaseReady = true;
+    debugLog('✅ Supabase 连接成功');
+    showLoginError('');
+  } catch(e) {
+    debugLog('❌ 初始化失败: ' + e.message);
+    showLoginError('❌ Supabase 连接失败: ' + e.message);
+  }
+  // 检查是否已有登录 session
+  checkSession();
+}
+
+async function checkSession(){
+  if(!supabaseReady) return;
+  try {
+    const {data:{session}} = await supabase.auth.getSession();
+    if(session && session.user){
+      currentUser = session.user;
+      await loadProfile();
+      enterApp();
+      debugLog('✅ 已有登录状态，直接进入');
+    } else {
+      debugLog('✅ 等待登录');
+    }
+  } catch(e) {
+    debugLog('Session检查异常: ' + e.message);
+  }
+}
+
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
-const SKEY='linglang_workbench_v1';
-let S; try{S=JSON.parse(localStorage.getItem(SKEY))||{};}catch(e){S={}}
+let currentUser = null;
+let currentRole = 'operator';
+let isRegisterMode = false;
+let modulesCache = [];
+let activeModId = '';
+let viewingUserId = null; // 管理者查看某运营详情时用
+
 const TD=()=>new Date().toISOString().slice(0,10);
 const esc=s=>(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const save=()=>localStorage.setItem(SKEY,JSON.stringify(S));
-const uid=()=>'m'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
 
-// ========== 默认配置（首次加载） ==========
-const DEFAULT={
-  meta:{title:'凌琅科技工作台',subtitle:'LingLang Tech Dashboard',emoji:'🏢',primary:'#4a7c59',primaryDk:'#3a6347',pale:'#d4e2cf',cream:'#f5f2e8'},
-  activeId:'daily',
-  modules:[
-    {id:'plan',icon:'📅',name:'今日计划',type:'list',badgeCycle:'pending,progress,done',badgeLabels:'待处理,进行中,已完成',items:[]},
-    {id:'daily',icon:'🛍️',name:'运营每日工作',type:'list',badgeCycle:'pending,progress,done',badgeLabels:'待处理,进行中,已完成',items:[
-      {t:'找品上品（一天3款或公司产品）',n:'',b:'pending',d:''},
-      {t:'查看昨日核心数据',n:'曝光/点击/转化/退款/差评',b:'pending',d:''},
-      {t:'检查店铺健康分 & 违规提醒',n:'侵权/图片/标题/属性/延迟发货',b:'pending',d:''},
-      {t:'查看官方活动 & 报名',n:'频道活动/秒杀/Flash Sale',b:'pending',d:''},
-      {t:'检查库存（少于4天催发货）',n:'',b:'pending',d:''},
-      {t:'查看质量工单 & 及时修改',n:'',b:'pending',d:''},
-      {t:'处理差评（申诉/记录/反馈工厂）',n:'高差评率做表找原因',b:'pending',d:''},
-      {t:'检查流量下滑商品',n:'',b:'pending',d:''},
-      {t:'检查缺货/断码商品',n:'',b:'pending',d:''},
-      {t:'新品上架后报名营销打折',n:'',b:'pending',d:''},
-      {t:'看市面爆款 & 找爆品',n:'',b:'pending',d:''}
-    ]},
-    {id:'check',icon:'📋',name:'新品上架检查表',type:'list',badgeCycle:'unchecked,checked,issue',badgeLabels:'未检查,已检查,有问题',items:[
-      {t:'产品与实物一致性对比',n:'确保描述与实物匹配',b:'unchecked',d:''},
-      {t:'图片高清 + 主图展示产品',n:'优先用长图，前面图片以解决痛点为主',b:'unchecked',d:''},
-      {t:'尺寸重量填写准确',n:'重量可少填10%',b:'unchecked',d:''},
-      {t:'证书完整且一致',n:'',b:'unchecked',d:''},
-      {t:'实拍图（有实物就实拍）',n:'',b:'unchecked',d:''},
-      {t:'说明书填写正确',n:'',b:'unchecked',d:''},
-      {t:'店小秘参数准确',n:'',b:'unchecked',d:''},
-      {t:'上架违规词检查',n:'逐图检查安全词',b:'unchecked',d:''},
-      {t:'待上架证书和实拍图审核',n:'确认通过后再上架',b:'unchecked',d:''}
-    ]},
-    {id:'review',icon:'📊',name:'每周复盘',type:'text',badgeCycle:'',badgeLabels:'',textContent:{good:'',bad:'',focus:''}},
-    {id:'settings',icon:'⚙️',name:'设置',type:'settings',badgeCycle:'',badgeLabels:'',items:[]}
-  ]
-};
+const thumbIcons={'pending':'📅','progress':'🔄','done':'✅','unchecked':'📋','checked':'✅','issue':'⚠️'};
+const badgeClassMap={'pending':'badge-pending','progress':'badge-progress','done':'badge-done','unchecked':'badge-unchecked','checked':'badge-checked','issue':'badge-issue'};
 
-// 首次初始化
-const INIT_KEY='linglang_initialized_v1';
-if(!localStorage.getItem(INIT_KEY)){
-  // 给预填数据加日期
-  DEFAULT.modules.forEach(m=>{
-    if(m.items) m.items.forEach(it=>{ if(!it.d) it.d=TD(); });
-  });
-  Object.assign(S,DEFAULT);
-  save();
-  localStorage.setItem(INIT_KEY,'1');
+// ========== 认证 ==========
+function toggleAuthMode(){
+  isRegisterMode=!isRegisterMode;
+  $('#loginBtn').textContent=isRegisterMode?'注册':'登录';
+  $('#loginSwitch').innerHTML=isRegisterMode?'已有账号？<a onclick="toggleAuthMode()">登录</a>':'还没有账号？<a onclick="toggleAuthMode()">注册</a>';
+  $('#loginError').textContent='';
 }
 
-// 确保 S 有完整结构
-if(!S.meta) S.meta=DEFAULT.meta;
-if(!S.modules) S.modules=DEFAULT.modules;
-if(!S.activeId) S.activeId=DEFAULT.activeId;
-save();
+async function doLogin(){
+  if(!supabase || !supabaseReady) {
+    $('#loginError').textContent = '⚠️ Supabase 未就绪，请刷新页面重试';
+    return;
+  }
+  const email=$('#loginEmail').value.trim();
+  const pass=$('#loginPass').value;
+  if(!email||!pass){$('#loginError').textContent='请输入邮箱和密码';return}
+  
+  const btn=$('#loginBtn');
+  btn.disabled=true;
+  btn.textContent='处理中...';
+  $('#loginError').textContent='';
+  $('#loginError').style.color='var(--red)';
 
-// ========== 应用主题色 ==========
-function applyTheme(){
-  const m=S.meta;
-  document.documentElement.style.setProperty('--primary',m.primary||'#4a7c59');
-  document.documentElement.style.setProperty('--primary-dk',m.primaryDk||'#3a6347');
-  document.documentElement.style.setProperty('--pale',m.pale||'#d4e2cf');
-  document.documentElement.style.setProperty('--cream',m.cream||'#f5f2e8');
-  document.querySelector('meta[name="theme-color"]').content=m.primary||'#4a7c59';
-  document.title=m.emoji+' '+m.title;
+  try {
+    let result;
+    if(isRegisterMode){
+      debugLog('注册: ' + email);
+      result=await supabase.auth.signUp({email,password:pass});
+      debugLog('注册结果: error=' + (result.error?result.error.message:'null') + ', user=' + (result.data?.user?'有':'无'));
+      if(result.error){$('#loginError').textContent=result.error.message;btn.disabled=false;btn.textContent='注册';return}
+      // 注册成功后自动触发 handle_new_user 创建 profile
+      // 检查是否需要邮箱确认
+      if(result.data?.user && !result.data.session) {
+        $('#loginError').style.color='var(--orange)';
+        $('#loginError').textContent='⚠️ 注册成功但需要邮箱确认。请去邮箱点确认链接，然后再登录。或者去 Supabase Dashboard 关闭邮箱确认设置。';
+        btn.disabled=false;btn.textContent='注册';
+        return;
+      }
+      // 如果注册后自动获得 session（邮箱确认已关闭），直接进入
+      if(result.data?.session) {
+        currentUser=result.data.user;
+        await loadProfile();
+        enterApp();
+        return;
+      }
+      $('#loginError').style.color='var(--primary)';
+      $('#loginError').textContent='✅ 注册成功！请切换到登录模式登录';
+      toggleAuthMode();
+      btn.disabled=false;btn.textContent='登录';
+      return;
+    }else{
+      debugLog('登录: ' + email);
+      result=await supabase.auth.signInWithPassword({email,password:pass});
+      debugLog('登录结果: error=' + (result.error?result.error.message:'null') + ', user=' + (result.data?.user?'有':'无'));
+      if(result.error){$('#loginError').textContent=result.error.message;btn.disabled=false;btn.textContent='登录';return}
+    }
+    currentUser=result.data.user;
+    await loadProfile();
+    enterApp();
+  } catch(e) {
+    debugLog('异常: ' + e.message);
+    $('#loginError').textContent = '❌ 操作失败: ' + e.message;
+    btn.disabled=false;
+    btn.textContent=isRegisterMode?'注册':'登录';
+  }
 }
 
-// ========== 侧边栏渲染 ==========
+async function loadProfile(){
+  const {data}=await supabase.from('profiles').select('*').eq('id',currentUser.id).single();
+  if(data){
+    currentRole=data.role;
+    currentUser.displayName=data.display_name;
+  }else{
+    // profile 可能还没创建（trigger延迟），等一下再试
+    await new Promise(r=>setTimeout(r,1000));
+    const {data:d2}=await supabase.from('profiles').select('*').eq('id',currentUser.id).single();
+    if(d2){currentRole=d2.role;currentUser.displayName=d2.display_name;}
+  }
+}
+
+function enterApp(){
+  $('#loginPage').style.display='none';
+  $('#mainApp').style.display='flex';
+  loadModules();
+}
+
+async function loadModules(){
+  const {data}=await supabase.from('modules').select('*').order('sort_order');
+  modulesCache=data||[];
+  if(!activeModId) activeModId=modulesCache.find(m=>m.name==='运营每日工作')?.id||modulesCache[0]?.id||'';
+  renderSidebar();
+  renderContent();
+}
+
+// ========== 侧边栏 ==========
 function renderSidebar(){
-  const m=S.meta;
-  $('#sbHd').innerHTML=`<div class="emoji">${esc(m.emoji)}</div><div class="title">${esc(m.title)}</div><div class="sub">${esc(m.subtitle)}</div>`;
+  const roleLabel=currentRole==='manager'?'管理者':'运营';
+  const roleCls=currentRole==='manager'?'manager':'';
+  $('#sbHd').innerHTML=`<div class="emoji">🏢</div><div class="title">凌琅科技工作台</div><div class="sub">${esc(currentUser.displayName||currentUser.email)} · ${roleLabel}</div><div class="role-badge ${roleCls}">${roleLabel}</div>`;
+
   const menu=$('#menu');
   menu.innerHTML='';
-  S.modules.forEach(mod=>{
-    if(mod.type==='settings'){
-      menu.innerHTML+=`<div class="mi${S.activeId===mod.id?' active':''}" data-mid="${mod.id}"><span class="icon">${mod.icon}</span><span class="label">${esc(mod.name)}</span></div>`;
-    }else{
-      menu.innerHTML+=`<div class="mi${S.activeId===mod.id?' active':''}" data-mid="${mod.id}"><span class="icon">${mod.icon}</span><span class="label">${esc(mod.name)}</span></div>`;
-    }
-  });
-  // 绑定点击
+  // 运营和管理者都有侧边栏菜单
+  if(currentRole==='operator'){
+    modulesCache.forEach(mod=>{
+      if(mod.name==='设置') return; // 运营不显示"设置"模块
+      menu.innerHTML+=`<div class="mi${activeModId===mod.id?' active':''}" data-mid="${mod.id}"><span class="icon">${mod.icon}</span><span class="label">${esc(mod.name)}</span></div>`;
+    });
+    // 运营专属：我的设置（只有改名字等基础功能）
+    menu.innerHTML+=`<div class="mi${activeModId==='my-settings'?' active':''}" data-mid="my-settings"><span class="icon">⚙️</span><span class="label">我的设置</span></div>`;
+  }else{
+    // 管理者：仪表盘 + 各模块 + 设置
+    menu.innerHTML+=`<div class="mi${activeModId==='dashboard'?' active':''}" data-mid="dashboard"><span class="icon">📊</span><span class="label">团队总览</span></div>`;
+    modulesCache.forEach(mod=>{
+      if(mod.name==='设置') return;
+      menu.innerHTML+=`<div class="mi${activeModId===mod.id?' active':''}" data-mid="${mod.id}"><span class="icon">${mod.icon}</span><span class="label">${esc(mod.name)}</span></div>`;
+    });
+    menu.innerHTML+=`<div class="mi${activeModId==='settings'?' active':''}" data-mid="settings"><span class="icon">⚙️</span><span class="label">系统设置</span></div>`;
+  }
+
+  // 绑定切换
   $$('.mi').forEach(it=>{
     it.addEventListener('click',()=>{
       $$('.mi').forEach(i=>i.classList.remove('active'));
       $$('.module').forEach(m=>m.classList.remove('active'));
       it.classList.add('active');
-      S.activeId=it.dataset.mid; save();
-      const target=$('#mod_'+it.dataset.mid);
+      activeModId=it.dataset.mid;
+      viewingUserId=null; // 重置
+      renderContent();
+      const target=$('#mod_'+activeModId);
       if(target) target.classList.add('active');
       $('#mTitle').textContent=it.querySelector('.icon').textContent+' '+it.querySelector('.label').textContent;
       if(window.innerWidth<=768) toggleSidebar();
-      location.hash=it.dataset.mid;
     });
   });
-  // 更新移动顶栏
-  const activeMod=S.modules.find(m=>m.id===S.activeId)||S.modules[0];
-  $('#mTitle').textContent=(activeMod?activeMod.icon:'')+' '+esc(activeMod?activeMod.name:'');
+}
+
+function toggleSidebar(){
+  $('#sidebar').classList.toggle('open');
+  $('#overlay').classList.toggle('show');
 }
 
 // ========== 内容区渲染 ==========
 function renderContent(){
   const area=$('#contentArea');
   area.innerHTML='';
-  S.modules.forEach(mod=>{
-    if(mod.type==='settings'){
-      area.innerHTML+=renderSettingsModule(mod);
-    }else if(mod.type==='text'){
-      area.innerHTML+=renderTextModule(mod);
-    }else{
-      area.innerHTML+=renderListModule(mod);
+
+  if(activeModId==='dashboard' && currentRole==='manager'){
+    area.innerHTML=renderDashboard();
+    loadDashboardData();
+  }else if(activeModId==='settings' && currentRole==='manager'){
+    area.innerHTML=renderManagerSettings();
+    loadSettingsData();
+  }else if(activeModId==='my-settings' && currentRole==='operator'){
+    area.innerHTML=renderOperatorSettings();
+  }else{
+    // 模块内容
+    const mod=modulesCache.find(m=>m.id===activeModId);
+    if(mod){
+      if(mod.type==='list'){
+        area.innerHTML=renderListModule(mod);
+        loadListData(mod);
+      }else if(mod.type==='text'){
+        area.innerHTML=renderTextModule(mod);
+        loadTextData(mod);
+      }
     }
-  });
-  // 激活当前模块
-  const target=$('#mod_'+S.activeId);
-  if(target) target.classList.add('active');
+  }
 }
 
-// ========== 列表型模块 ==========
-function renderListModule(mod){
-  const cycles=mod.badgeCycle?mod.badgeCycle.split(','):['pending','progress','done'];
-  const labels=mod.badgeLabels?mod.badgeLabels.split(','):cycles;
-  const items=mod.items||[];
-  const hasStats=cycles.length===3;
-  let statsHtml='';
-  if(hasStats){
-    const counts=cycles.map(c=>items.filter(i=>i.b===c).length);
-    const total=items.length;
-    // 找出"完成"类的badge（最后一个或名为"已完成/已检查"的）
-    const doneIdx=cycles.length-1;
-    const pct=total?Math.round(counts[doneIdx]/total*100):0;
-    statsHtml=`<div class="stats">${counts.map((c,i)=>`<div class="stat"><div class="num" style="${i===doneIdx?'color:var(--primary)':i===1?'color:var(--blue)':''}">${c}</div><div class="label">${esc(labels[i])}</div></div>`).join('')}</div>
-    <div class="progress-bar"><div class="fill" id="prog_${mod.id}" style="width:${pct}%"></div></div>
-    <div class="card-sub" id="progLabel_${mod.id}">完成进度：${pct}%（${counts[doneIdx]}/${total}）</div>`;
-  }
-  const badgeClassMap={
-    'pending':'badge-pending','progress':'badge-progress','done':'badge-done',
-    'unchecked':'badge-unchecked','checked':'badge-checked','issue':'badge-issue'
-  };
-  const thumbIconMap={
-    'pending':'📅','progress':'🔄','done':'✅',
-    'unchecked':'📋','checked':'✅','issue':'⚠️'
-  };
+// ========== 管理者 - 团队总览 ==========
+function renderDashboard(){
+  return `<section class="module active" id="mod_dashboard">
+    <div class="card">
+      <div class="card-title">📊 团队总览</div>
+      <div class="card-sub">查看所有运营的工作完成情况，点击名字可查看详情</div>
+      <div id="dashStats" class="stats">
+        <div class="stat"><div class="num" id="dsTotalOps">-</div><div class="label">运营人数</div></div>
+        <div class="stat"><div class="num" id="dsAvgPct">-</div><div class="label">平均完成率</div></div>
+        <div class="stat"><div class="num" id="dsTodayDone">-</div><div class="label">今日已完成</div></div>
+      </div>
+      <div id="dashList"></div>
+    </div>
+  </section>`;
+}
+
+async function loadDashboardData(){
+  // 获取所有运营 profile
+  const {data:operators}=await supabase.from('profiles').select('*').eq('role','operator');
+  if(!operators) return;
+
+  $('#dsTotalOps').textContent=operators.length;
+
+  // 获取所有运营今日的 items
+  const today=TD();
+  const {data:allItems}=await supabase.from('items').select('user_id, badge, module_id').eq('date',today);
+
+  // 计算每个运营的完成率（基于"运营每日工作"模块）
+  const dailyMod=modulesCache.find(m=>m.name==='运营每日工作');
+  let totalDone=0;
+  let totalPct=0;
+  let opCount=0;
+
+  const dashList=$('#dashList');
+  dashList.innerHTML='';
+  operators.forEach(op=>{
+    const myItems=(allItems||[]).filter(i=>i.user_id===op.id);
+    const dailyItems=myItems.filter(i=>i.module_id===dailyMod?.id);
+    const done=dailyItems.filter(i=>i.badge==='done').length;
+    const total=dailyItems.length;
+    const pct=total?Math.round(done/total*100):0;
+    if(total>0){totalPct+=pct;opCount++;}
+    totalDone+=done;
+
+    dashList.innerHTML+=`<div class="dash-user-row" onclick="viewUserDetail('${op.id}','${esc(op.display_name)}')">
+      <div class="user-avatar">${op.display_name?.charAt(0)||'👤'}</div>
+      <div class="user-info">
+        <div class="user-name">${esc(op.display_name||op.id.slice(0,8))}</div>
+        <div class="user-stats">${done}/${total} 已完成 · ${today}</div>
+        <div class="user-detail-bar"><div style="height:100%;width:${pct}%;background:var(--primary);border-radius:3px;transition:width .4s"></div></div>
+      </div>
+      <div class="user-pct">${pct}%</div>
+    </div>`;
+  });
+
+  $('#dsAvgPct').textContent=opCount?Math.round(totalPct/opCount)+'%':'0%';
+  $('#dsTodayDone').textContent=totalDone;
+}
+
+// 管理者查看某运营详情
+async function viewUserDetail(userId, userName){
+  viewingUserId=userId;
+  const mod=modulesCache.find(m=>m.name==='运营每日工作');
+  if(!mod) return;
+
+  const today=TD();
+  const {data:items}=await supabase.from('items').select('*').eq('module_id',mod.id).eq('user_id',userId).eq('date',today);
+
+  const done=(items||[]).filter(i=>i.badge==='done').length;
+  const prog=(items||[]).filter(i=>i.badge==='progress').length;
+  const pend=(items||[]).filter(i=>i.badge==='pending').length;
+  const total=items?.length||0;
+  const pct=total?Math.round(done/total*100):0;
+
+  const cycles=mod.badge_cycle.split(',');
+  const labels=mod.badge_labels.split(',');
 
   let listHtml='';
-  if(items.length===0){
-    listHtml='<div class="empty">还没有条目，点击添加 ✏️</div>';
-  }else{
-    items.forEach((it,i)=>{
-      const bc=badgeClassMap[it.b]||'badge-pending';
-      const bt=labels[cycles.indexOf(it.b)]||it.b;
-      const thumbI=thumbIconMap[it.b]||mod.icon;
-      const isDone=it.b==='done'||it.b==='checked';
-      const isIssue=it.b==='issue';
-      const liStyle=isDone?'opacity:.7':isIssue?'background:#fef2f2':'';
-      const nameStyle=isDone?'text-decoration:line-through;color:var(--muted)':'';
-      listHtml+=`<div class="li" style="${liStyle}">
-        <div class="thumb" style="cursor:pointer" onclick="cycleBadge('${mod.id}',${i})">${thumbI}</div>
-        <div class="meta">
-          <div class="name" style="${nameStyle}">${esc(it.t)}</div>
-          ${it.n?`<div class="desc">${esc(it.n)}</div>`:''}
-          <div class="badges"><span class="badge ${bc}">${esc(bt)}</span><span style="font-size:11px;color:var(--muted)">${it.d||''}</span></div>
-        </div>
-        <div class="ops">
-          <button class="icon-btn" onclick="editItem('${mod.id}',${i})">✏️</button>
-          <button class="icon-btn del" onclick="delItem('${mod.id}',${i})">🗑</button>
-        </div>
-      </div>`;
-    });
-  }
-
-  const selOptions=cycles.map((c,i)=>`<option value="${c}">${esc(labels[i])}</option>`).join('');
-
-  return `<section class="module" id="mod_${mod.id}">
-  <div class="card">
-    <div class="card-title"><span class="emoji">${mod.icon}</span>${esc(mod.name)} <span class="badge badge-pending" id="dateBadge_${mod.id}" style="margin-left:auto;font-weight:normal">${TD()}</span></div>
-    ${mod.badgeCycle?`<div class="row" style="margin-bottom:12px">
-      <input class="input" id="input_${mod.id}" placeholder="添加条目…" style="flex:1" onkeydown="if(event.key==='Enter')addItem('${mod.id}')">
-      <select class="input" id="selBadge_${mod.id}" style="flex:0 0 100px;font-size:13px">${selOptions}</select>
-      <button class="btn btn-p" onclick="addItem('${mod.id}')">添加</button>
-    </div>`:`<div class="row" style="margin-bottom:12px">
-      <input class="input" id="input_${mod.id}" placeholder="添加条目…" style="flex:1" onkeydown="if(event.key==='Enter')addItem('${mod.id}')">
-      <button class="btn btn-p" onclick="addItem('${mod.id}')">添加</button>
-    </div>`}
-    ${statsHtml}
-    <div class="list" id="list_${mod.id}">${listHtml}</div>
-  </div>
-</section>`;
-}
-
-// ========== 文本型模块 ==========
-function renderTextModule(mod){
-  const tc=mod.textContent||{good:'',bad:'',focus:''};
-  return `<section class="module" id="mod_${mod.id}">
-  <div class="card">
-    <div class="card-title"><span class="emoji">${mod.icon}</span>${esc(mod.name)} <span class="badge badge-pending" id="weekRange_${mod.id}" style="margin-left:auto;font-weight:normal"></span></div>
-    <div style="margin-bottom:12px">
-      <label style="font-size:13px;font-weight:600;color:var(--primary);display:block;margin-bottom:6px">✅ 做得好的</label>
-      <textarea class="textarea" id="textGood_${mod.id}" placeholder="哪些事情做得好？…" style="min-height:80px" oninput="saveText('${mod.id}')">${esc(tc.good)}</textarea>
-    </div>
-    <div style="margin-bottom:12px">
-      <label style="font-size:13px;font-weight:600;color:var(--orange);display:block;margin-bottom:6px">🔧 要改进的</label>
-      <textarea class="textarea" id="textBad_${mod.id}" placeholder="哪些地方需要改进？…" style="min-height:80px" oninput="saveText('${mod.id}')">${esc(tc.bad)}</textarea>
-    </div>
-    <div>
-      <label style="font-size:13px;font-weight:600;color:var(--red);display:block;margin-bottom:6px">🎯 下周重点</label>
-      <textarea class="textarea" id="textFocus_${mod.id}" placeholder="下周最重要的事…" style="min-height:80px" oninput="saveText('${mod.id}')">${esc(tc.focus)}</textarea>
-    </div>
-  </div>
-</section>`;
-}
-
-// ========== 设置模块 ==========
-function renderSettingsModule(mod){
-  const m=S.meta;
-  let modListHtml='';
-  S.modules.forEach((md,i)=>{
-    if(md.type==='settings') return;
-    const typeLabel={list:'列表',text:'文本',checkin:'打卡'}[md.type]||md.type;
-    modListHtml+=`<div class="mod-card">
-      <div class="mod-icon">${md.icon}</div>
-      <div class="mod-info">
-        <div class="mod-name">${esc(md.name)}</div>
-        <div class="mod-type">${typeLabel} · 徽章: ${esc(md.badgeLabels||'无')}</div>
-      </div>
-      <div class="mod-actions">
-        <button class="btn btn-sm btn-g" onclick="editModule('${md.id}')">✏️ 编辑</button>
-        <button class="btn btn-sm btn-r" onclick="delModule('${md.id}')">删除</button>
+  (items||[]).forEach(it=>{
+    const bc=badgeClassMap[it.badge]||'badge-pending';
+    const bt=labels[cycles.indexOf(it.badge)]||it.badge;
+    const ti=thumbIcons[it.badge]||mod.icon;
+    const isDone=it.badge==='done';
+    listHtml+=`<div class="li" style="${isDone?'opacity:.7':''}">
+      <div class="thumb">${ti}</div>
+      <div class="meta">
+        <div class="name" style="${isDone?'text-decoration:line-through;color:var(--muted)':''}">${esc(it.title)}</div>
+        ${it.note?`<div class="desc">${esc(it.note)}</div>`:''}
+        <div class="badges"><span class="badge ${bc}">${esc(bt)}</span><span style="font-size:11px;color:var(--muted)">${it.date}</span></div>
       </div>
     </div>`;
   });
 
-  return `<section class="module" id="mod_${mod.id}">
-  <div class="card">
-    <div class="card-title"><span class="emoji">${mod.icon}</span>${esc(mod.name)}</div>
-
-    <div style="margin-bottom:20px">
-      <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:8px">🎨 基础信息</div>
-      <div class="row" style="margin-bottom:8px">
-        <label style="font-size:13px;width:70px;flex-shrink:0">标题</label>
-        <input class="input" id="setTitle" value="${esc(m.title)}" oninput="updateMeta()">
+  const area=$('#contentArea');
+  area.innerHTML=`<section class="module active">
+    <button class="back-btn" onclick="backToDashboard()">← 返回总览</button>
+    <div class="card">
+      <div class="card-title"><span class="emoji">👤</span>${esc(userName)} 的今日工作</div>
+      <div class="stats">
+        <div class="stat"><div class="num">${pend}</div><div class="label">待处理</div></div>
+        <div class="stat"><div class="num" style="color:var(--blue)">${prog}</div><div class="label">进行中</div></div>
+        <div class="stat"><div class="num" style="color:var(--primary)">${done}</div><div class="label">已完成</div></div>
       </div>
-      <div class="row" style="margin-bottom:8px">
-        <label style="font-size:13px;width:70px;flex-shrink:0">副标题</label>
-        <input class="input" id="setSubtitle" value="${esc(m.subtitle)}" oninput="updateMeta()">
-      </div>
-      <div class="row" style="margin-bottom:8px">
-        <label style="font-size:13px;width:70px;flex-shrink:0">Logo Emoji</label>
-        <input class="input" id="setEmoji" value="${m.emoji}" oninput="updateMeta()" style="width:60px;flex:none;text-align:center;font-size:20px">
-        <input class="input" id="setEmojiAlt" placeholder="输入任意emoji" style="flex:1;font-size:16px" oninput="if(this.value){$('#setEmoji').value=this.value.slice(0,2);updateMeta();this.value=''}">
-      </div>
+      <div class="progress-bar"><div class="fill" style="width:${pct}%"></div></div>
+      <div class="card-sub">完成进度：${pct}%（${done}/${total}）</div>
+      <div class="list">${listHtml||'<div class="empty">今日暂无工作记录</div>'}</div>
     </div>
+  </section>`;
+}
 
-    <div style="margin-bottom:20px">
-      <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:8px">🎨 配色方案</div>
-      <div class="row" style="margin-bottom:8px">
-        <label style="font-size:13px;width:70px;flex-shrink:0">主色</label>
-        <input type="color" id="setColorPrimary" value="${m.primary||'#4a7c59'}" oninput="updateMeta()" style="width:40px;height:36px;border:none;cursor:pointer;border-radius:8px">
-        <input class="input" id="setColorPrimaryHex" value="${m.primary||'#4a7c59'}" oninput="$('#setColorPrimary').value=this.value;updateMeta()" style="width:90px;flex:none;font-size:12px">
-      </div>
-      <div class="row" style="margin-bottom:8px">
-        <label style="font-size:13px;width:70px;flex-shrink:0">侧栏色</label>
-        <input type="color" id="setColorPale" value="${m.pale||'#d4e2cf'}" oninput="updateMeta()" style="width:40px;height:36px;border:none;cursor:pointer;border-radius:8px">
-        <input class="input" id="setColorPaleHex" value="${m.pale||'#d4e2cf'}" oninput="$('#setColorPale').value=this.value;updateMeta()" style="width:90px;flex:none;font-size:12px">
-      </div>
-      <div class="row" style="margin-bottom:8px">
-        <label style="font-size:13px;width:70px;flex-shrink:0">背景色</label>
-        <input type="color" id="setColorCream" value="${m.cream||'#f5f2e8'}" oninput="updateMeta()" style="width:40px;height:36px;border:none;cursor:pointer;border-radius:8px">
-        <input class="input" id="setColorCreamHex" value="${m.cream||'#f5f2e8'}" oninput="$('#setColorCream').value=this.value;updateMeta()" style="width:90px;flex:none;font-size:12px">
-      </div>
-    </div>
+function backToDashboard(){
+  viewingUserId=null;
+  activeModId='dashboard';
+  renderSidebar();
+  renderContent();
+  const target=$('#mod_dashboard');
+  if(target) target.classList.add('active');
+  const tab=document.querySelector('.mi[data-mid="dashboard"]');
+  if(tab){$$('.mi').forEach(i=>i.classList.remove('active'));tab.classList.add('active');}
+}
 
-    <div style="margin-bottom:20px">
-      <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:8px">📦 模块管理</div>
-      ${modListHtml}
+// ========== 管理者 - 系统设置 ==========
+function renderManagerSettings(){
+  return `<section class="module active" id="mod_settings">
+    <div class="card">
+      <div class="card-title">⚙️ 系统设置</div>
+
+      <text class="section-title">👤 人员管理</text>
+      <div id="userMgmtList"></div>
+      <div style="margin-top:8px;font-size:12px;color:var(--muted)">💡 新运营注册后默认为"运营"角色，管理者可在此升级为管理者</div>
+
+      <text class="section-title">📦 模块管理</text>
+      <div id="modMgmtList"></div>
       <div class="row" style="margin-top:10px">
         <button class="btn btn-p btn-sm" onclick="addModule()">+ 添加模块</button>
       </div>
-    </div>
 
-    <div style="margin-bottom:20px">
-      <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:8px">💾 数据管理</div>
-      <div class="row">
-        <button class="btn btn-g" onclick="exportData()">📤 导出备份</button>
-        <button class="btn btn-g" onclick="importData()">📥 导入备份</button>
-        <button class="btn btn-r" onclick="if(confirm('⚠️ 清空所有数据？此操作不可恢复！')){localStorage.removeItem(SKEY);localStorage.removeItem(INIT_KEY);location.reload()}">🗑 清空数据</button>
+      <text class="section-title">💾 数据</text>
+      <div class="row" style="margin-top:8px">
+        <button class="btn btn-g" onclick="exportTeamData()">📤 导出团队数据</button>
+        <button class="btn btn-r" onclick="clearMyData()">🗑 清空我的数据</button>
       </div>
-      <input type="file" id="importFile" accept=".json" style="display:none" onchange="doImport(event)">
+      <div class="card-sub" style="margin-top:12px;margin-bottom:0">团队数据存储在 Supabase · 所有运营实时同步</div>
     </div>
-
-    <div class="card-sub" style="margin-bottom:0">数据保存在浏览器本地 · 刷新不丢失 · 所有改动实时生效</div>
-  </div>
-</section>`;
+  </section>`;
 }
 
-// ========== 列表操作 ==========
-function addItem(modId){
-  const mod=S.modules.find(m=>m.id===modId);
-  const v=$('#input_'+modId).value.trim(); if(!v) return;
-  const b=mod.badgeCycle?$('#selBadge_'+modId)?.value||mod.badgeCycle.split(',')[0]:'pending';
-  if(!mod.items) mod.items=[];
-  mod.items.push({t:v,n:'',b:b,d:TD()});
-  save(); refreshAll();
-  const inp=$('#input_'+modId); if(inp) inp.value='';
-}
+async function loadSettingsData(){
+  // 人员管理
+  const {data:users}=await supabase.from('profiles').select('*');
+  const umList=$('#userMgmtList');
+  umList.innerHTML='';
+  (users||[]).forEach(u=>{
+    const roleCls=u.role==='manager'?'manager':'operator';
+    umList.innerHTML+=`<div class="user-mgmt-row">
+      <span class="um-name">${esc(u.display_name||u.id.slice(0,8))}</span>
+      <span class="um-role ${roleCls}">${u.role==='manager'?'管理者':'运营'}</span>
+      <button class="um-role-btn" onclick="toggleRole('${u.id}','${u.role}')">${u.role==='manager'?'降为运营':'升为管理者'}</button>
+    </div>`;
+  });
 
-function cycleBadge(modId,i){
-  const mod=S.modules.find(m=>m.id===modId);
-  if(!mod||!mod.items||!mod.badgeCycle) return;
-  const cycles=mod.badgeCycle.split(',');
-  const cur=cycles.indexOf(mod.items[i].b);
-  mod.items[i].b=cycles[(cur+1)%cycles.length];
-  save(); refreshAll();
-}
-
-function editItem(modId,i){
-  const mod=S.modules.find(m=>m.id===modId);
-  const newT=prompt('编辑条目：',mod.items[i].t);
-  if(newT!==null&&newT.trim()){
-    mod.items[i].t=newT.trim();
-    const newN=prompt('备注（可留空）：',mod.items[i].n||'');
-    if(newN!==null) mod.items[i].n=newN;
-    save(); refreshAll();
-  }
-}
-
-function delItem(modId,i){
-  const mod=S.modules.find(m=>m.id===modId);
-  mod.items.splice(i,1); save(); refreshAll();
-}
-
-// ========== 文本操作 ==========
-function saveText(modId){
-  const mod=S.modules.find(m=>m.id===modId);
-  mod.textContent={
-    good:$('#textGood_'+modId)?.value||'',
-    bad:$('#textBad_'+modId)?.value||'',
-    focus:$('#textFocus_'+modId)?.value||''
-  };
-  save();
-}
-
-// ========== 设置操作 ==========
-function updateMeta(){
-  S.meta.title=$('#setTitle')?.value||S.meta.title;
-  S.meta.subtitle=$('#setSubtitle')?.value||S.meta.subtitle;
-  S.meta.emoji=$('#setEmoji')?.value||S.meta.emoji;
-  S.meta.primary=$('#setColorPrimary')?.value||S.meta.primary;
-  S.meta.primaryDk=S.meta.primary;
-  S.meta.pale=$('#setColorPale')?.value||S.meta.pale;
-  S.meta.cream=$('#setColorCream')?.value||S.meta.cream;
-  // 同步hex输入框
-  const ph=$('#setColorPrimaryHex'); if(ph) ph.value=S.meta.primary;
-  const pah=$('#setColorPaleHex'); if(pah) pah.value=S.meta.pale;
-  const ch=$('#setColorCreamHex'); if(ch) ch.value=S.meta.cream;
-  save(); refreshAll();
-}
-
-function addModule(){
-  const name=prompt('模块名称：');
-  if(!name||!name.trim()) return;
-  const icon=prompt('模块图标（输入emoji）：','📌');
-  const type=prompt('模块类型：\n1 = 列表（带徽章状态）\n2 = 文本（自由书写）','1');
-  let modType='list', badgeCycle='pending,progress,done', badgeLabels='待处理,进行中,已完成';
-  if(type==='2'){
-    modType='text'; badgeCycle=''; badgeLabels='';
-  }else{
-    const customBadges=prompt('徽章流程（逗号分隔，留空用默认）\n示例: unchecked,checked,issue\n示例: 待办,进行中,已完成','');
-    if(customBadges&&customBadges.trim()){
-      badgeCycle=customBadges.trim();
-      badgeLabels=customBadges.trim();
-    }
-  }
-  const newMod={id:uid(),icon:icon||'📌',name:name.trim(),type:modType,badgeCycle,badgeLabels,
-    items:modType==='list'?[]:undefined,
-    textContent:modType==='text'?{good:'',bad:'',focus:''}:undefined};
-  S.modules.splice(S.modules.length-1,0,newMod); // 插在设置前面
-  save(); refreshAll();
-}
-
-function editModule(modId){
-  const mod=S.modules.find(m=>m.id===modId);
-  const newName=prompt('模块名称：',mod.name);
-  if(!newName||!newName.trim()) return;
-  mod.name=newName.trim();
-  const newIcon=prompt('模块图标（输入emoji）：',mod.icon);
-  if(newIcon) mod.icon=newIcon;
-  if(mod.type==='list'){
-    const newBadges=prompt('徽章流程（逗号分隔）：',mod.badgeCycle);
-    if(newBadges&&newBadges.trim()){
-      mod.badgeCycle=newBadges.trim();
-      mod.badgeLabels=prompt('徽章中文标签（逗号分隔）：',mod.badgeLabels)||newBadges.trim();
-    }
-  }
-  save(); refreshAll();
-}
-
-function delModule(modId){
-  if(!confirm(`确认删除模块「${S.modules.find(m=>m.id===modId).name}」？\n该模块的所有数据也会被删除。`)) return;
-  S.modules=S.modules.filter(m=>m.id!==modId);
-  if(S.activeId===modId) S.activeId=S.modules[0]?.id||'plan';
-  save(); refreshAll();
-}
-
-// ========== 数据导入导出 ==========
-function exportData(){
-  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=`linglang-backup-${TD()}.json`;
-  a.click();
-}
-
-function importData(){
-  $('#importFile').click();
-}
-
-function doImport(e){
-  const file=e.target.files[0]; if(!file) return;
-  const reader=new FileReader();
-  reader.onload=function(ev){
-    try{
-      const data=JSON.parse(ev.target.result);
-      Object.assign(S,data);
-      save(); refreshAll();
-      alert('✅ 导入成功！');
-    }catch(err){
-      alert('❌ 文件格式错误：'+err.message);
-    }
-  };
-  reader.readAsText(file);
-}
-
-// ========== 侧边栏开关 ==========
-function toggleSidebar(){
-  $('#sidebar').classList.toggle('open');
-  $('#overlay').classList.toggle('show');
-}
-
-// ========== 全量刷新 ==========
-function refreshAll(){
-  applyTheme();
-  renderSidebar();
-  renderContent();
-  // 恢复文本模块的内容（渲染时已写入 textarea value）
-  // 恢复设置模块的输入值
-  // 激活当前模块
-  const target=$('#mod_'+S.activeId);
-  if(target) target.classList.add('active');
-  // 如果 hash 有值，跳转
-  if(location.hash){
-    const t=document.querySelector(`.mi[data-mid="${location.hash.slice(1)}"]`);
-    if(t) t.click();
-  }
-  // 设置周日期
-  const d=new Date(),day=d.getDay()||7;
-  const mon=new Date(d-(day-1)*864e5),sun=new Date(d+(7-day)*864e5);
-  const fmt=x=>`${x.getMonth()+1}/${x.getDate()}`;
-  S.modules.forEach(mod=>{
-    const el=$('#weekRange_'+mod.id);
-    if(el) el.textContent=`${fmt(mon)} – ${fmt(sun)}`;
+  // 模块管理
+  const modList=$('#modMgmtList');
+  modList.innerHTML='';
+  modulesCache.forEach(mod=>{
+    if(mod.name==='设置') return;
+    const typeLabel=mod.type==='list'?'列表':'文本';
+    modList.innerHTML+=`<div class="mod-card">
+      <div class="mod-icon">${mod.icon}</div>
+      <div class="mod-info"><div class="mod-name">${esc(mod.name)}</div><div class="mod-type">${typeLabel} · ${esc(mod.badge_labels)}</div></div>
+      <div style="display:flex;gap:4px">
+        <button class="btn btn-sm btn-g" onclick="editModule('${mod.id}')">✏️</button>
+        <button class="btn btn-sm btn-r" onclick="delModule('${mod.id}')">✕</button>
+      </div>
+    </div>`;
   });
 }
 
-// ========== 启动 ==========
-refreshAll();
+async function toggleRole(userId, currentRole){
+  const newRole=currentRole==='manager'?'operator':'manager';
+  await supabase.from('profiles').update({role:newRole}).eq('id',userId);
+  loadSettingsData();
+  if(userId===currentUser.id){currentRole=newRole;renderSidebar();}
+}
+
+async function addModule(){
+  const name=prompt('模块名称：');if(!name) return;
+  const icon=prompt('图标（emoji）：','📌');
+  const type=prompt('类型：1=列表 2=文本','1');
+  const mt=type==='2'?'text':'list';
+  const bc=mt==='list'?(prompt('徽章流程（逗号分隔）：','pending,progress,done')||'pending,progress,done'):'';
+  const bl=mt==='list'?(prompt('徽章标签（逗号分隔）：','待处理,进行中,已完成')||'待处理,进行中,已完成'):'';
+  const maxSort=modulesCache.reduce((mx,m)=>Math.max(mx,m.sort_order||0),0);
+  await supabase.from('modules').insert({icon:icon||'📌',name:name.trim(),type:mt,badge_cycle:bc,badge_labels:bl,sort_order:maxSort+1});
+  await loadModules();
+  activeModId='settings';renderSidebar();renderContent();
+}
+
+async function editModule(modId){
+  const mod=modulesCache.find(m=>m.id===modId);
+  const newName=prompt('名称：',mod.name);if(!newName) return;
+  const newIcon=prompt('图标：',mod.icon);
+  await supabase.from('modules').update({name:newName.trim(),icon:newIcon||mod.icon}).eq('id',modId);
+  await loadModules();
+  activeModId='settings';renderSidebar();renderContent();
+}
+
+async function delModule(modId){
+  if(!confirm('删除模块？所有运营的该模块数据也会删除！')) return;
+  await supabase.from('modules').delete().eq('id',modId);
+  await loadModules();
+  activeModId='settings';renderSidebar();renderContent();
+}
+
+async function exportTeamData(){
+  const {data:items}=await supabase.from('items').select('*');
+  const {data:texts}=await supabase.from('text_content').select('*');
+  const blob=new Blob([JSON.stringify({modules:modulesCache,items,texts},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`team-backup-${TD()}.json`;a.click();
+}
+
+async function clearMyData(){
+  if(!confirm('清空你的所有条目数据？')) return;
+  await supabase.from('items').delete().eq('user_id',currentUser.id);
+  renderContent();
+}
+
+// ========== 运营 - 我的设置 ==========
+function renderOperatorSettings(){
+  return `<section class="module active" id="mod_my-settings">
+    <div class="card">
+      <div class="card-title">⚙️ 我的设置</div>
+      <div class="setting-row">
+        <span class="label">显示名称</span>
+        <input class="input" id="opDisplayName" value="${esc(currentUser.displayName||'')}" style="width:200px" oninput="updateDisplayName()">
+      </div>
+      <div class="card-sub" style="margin-top:12px">模块由管理者统一管理，运营不可增删模块</div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn btn-g" onclick="exportMyData()">📤 导出我的数据</button>
+      </div>
+    </div>
+  </section>`;
+}
+
+async function updateDisplayName(){
+  const v=$('#opDisplayName')?.value||'';
+  currentUser.displayName=v;
+  await supabase.from('profiles').update({display_name:v}).eq('id',currentUser.id);
+  renderSidebar();
+}
+
+async function exportMyData(){
+  const {data:items}=await supabase.from('items').select('*').eq('user_id',currentUser.id);
+  const {data:texts}=await supabase.from('text_content').select('*').eq('user_id',currentUser.id);
+  const blob=new Blob([JSON.stringify({items,texts},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`my-backup-${TD()}.json`;a.click();
+}
+
+// ========== 列表型模块 ==========
+function renderListModule(mod){
+  const cycles=mod.badge_cycle?mod.badge_cycle.split(','):['pending','progress','done'];
+  const labels=mod.badge_labels?mod.badge_labels.split(','):cycles;
+  const selOptions=cycles.map((c,i)=>`<option value="${c}">${esc(labels[i])}</option>`).join('');
+  const isOperator=currentRole==='operator';
+  // 运营可以看到自己的统计和添加条目；管理者看到所有人的汇总
+  const addRow=isOperator?`<div class="row" style="margin-bottom:12px">
+    <input class="input" id="addInput_${mod.id}" placeholder="添加条目…" style="flex:1" onkeydown="if(event.key==='Enter')addItem('${mod.id}')">
+    ${cycles.length>1?`<select class="input" id="addBadge_${mod.id}" style="flex:0 0 100px;font-size:13px">${selOptions}</select>`:''}
+    <button class="btn btn-p" onclick="addItem('${mod.id}')">添加</button>
+  </div>`:'';
+
+  return `<section class="module" id="mod_${mod.id}">
+    <div class="card">
+      <div class="card-title"><span class="emoji">${mod.icon}</span>${esc(mod.name)}</div>
+      ${addRow}
+      <div id="listStats_${mod.id}" class="stats"></div>
+      <div class="progress-bar"><div class="fill" id="listProg_${mod.id}"></div></div>
+      <div class="card-sub" id="listProgLabel_${mod.id}"></div>
+      <div class="list" id="listItems_${mod.id}"></div>
+    </div>
+  </section>`;
+}
+
+async function loadListData(mod){
+  const today=TD();
+  const cycles=mod.badge_cycle?mod.badge_cycle.split(','):['pending','progress','done'];
+  const labels=mod.badge_labels?mod.badge_labels.split(','):cycles;
+
+  if(currentRole==='operator'){
+    // 运营只看自己的数据
+    const {data:items}=await supabase.from('items').select('*').eq('module_id',mod.id).eq('user_id',currentUser.id).eq('date',today);
+    renderOperatorList(mod,items||[],cycles,labels,today);
+  }else{
+    // 管理者看所有人的汇总
+    const {data:items}=await supabase.from('items').select('*').eq('module_id',mod.id).eq('date',today);
+    const {data:ops}=await supabase.from('profiles').select('id,display_name').eq('role','operator');
+    renderManagerList(mod,items||[],ops||[],cycles,labels,today);
+  }
+}
+
+function renderOperatorList(mod,items,cycles,labels,today){
+  const total=items.length;
+  const doneIdx=cycles.indexOf('done')>=0?cycles.indexOf('done'):cycles.length-1;
+  const done=items.filter(i=>i.badge===cycles[doneIdx]).length;
+  const pct=total?Math.round(done/total*100):0;
+
+  const counts=cycles.map(c=>({count:items.filter(i=>i.badge===c).length,label:labels[cycles.indexOf(c)]}));
+  const colors=['','color:var(--blue)','color:var(--primary)'];
+  $('#listStats_'+mod.id).innerHTML=counts.map((c,i)=>`<div class="stat"><div class="num" style="${colors[i]||''}">${c.count}</div><div class="label">${esc(c.label)}</div></div>`).join('');
+  $('#listProg_'+mod.id).style.width=pct+'%';
+  $('#listProgLabel_'+mod.id).textContent=`完成进度：${pct}%（${done}/${total}）`;
+
+  const listEl=$('#listItems_'+mod.id);
+  listEl.innerHTML=total?'':'<div class="empty">还没有今日任务 ✏️</div>';
+  items.forEach((it,i)=>{
+    const bc=badgeClassMap[it.badge]||'badge-pending';
+    const bt=labels[cycles.indexOf(it.badge)]||it.badge;
+    const ti=thumbIcons[it.badge]||mod.icon;
+    const isDone=it.badge==='done'||it.badge==='checked';
+    const isIssue=it.badge==='issue';
+    listEl.innerHTML+=`<div class="li" style="${isDone?'opacity:.7':isIssue?'background:#fef2f2':''}">
+      <div class="thumb" onclick="cycleBadge('${mod.id}',${it.id})">${ti}</div>
+      <div class="meta">
+        <div class="name" style="${isDone?'text-decoration:line-through;color:var(--muted)':''}">${esc(it.title)}</div>
+        ${it.note?`<div class="desc">${esc(it.note)}</div>`:''}
+        <div class="badges"><span class="badge ${bc}">${esc(bt)}</span><span style="font-size:11px;color:var(--muted)">${it.date}</span></div>
+      </div>
+      <div class="ops">
+        <button class="icon-btn" onclick="editItem(${it.id})">✏️</button>
+        <button class="icon-btn del" onclick="delItem(${it.id},'${mod.id}')">🗑</button>
+      </div>
+    </div>`;
+  });
+}
+
+function renderManagerList(mod,allItems,ops,cycles,labels,today){
+  // 管理者看到每个运营的汇总
+  const listEl=$('#listItems_'+mod.id);
+  const totalAll=allItems.length;
+  const doneIdx=cycles.indexOf('done')>=0?cycles.indexOf('done'):cycles.length-1;
+  const totalDone=allItems.filter(i=>i.badge===cycles[doneIdx]).length;
+  const pct=totalAll?Math.round(totalDone/totalAll*100):0;
+
+  // 全局统计
+  const counts=cycles.map(c=>({count:allItems.filter(i=>i.badge===c).length,label:labels[cycles.indexOf(c)]}));
+  $('#listStats_'+mod.id).innerHTML=counts.map((c,i)=>`<div class="stat"><div class="num">${c.count}</div><div class="label">${esc(c.label)}</div></div>`).join('');
+  $('#listProg_'+mod.id).style.width=pct+'%';
+  $('#listProgLabel_'+mod.id).textContent=`团队完成进度：${pct}%（${totalDone}/${totalAll}）`;
+
+  // 每个运营一行
+  listEl.innerHTML='';
+  ops.forEach(op=>{
+    const myItems=allItems.filter(i=>i.user_id===op.id);
+    const done=myItems.filter(i=>i.badge===cycles[doneIdx]).length;
+    const total=myItems.length;
+    const opPct=total?Math.round(done/total*100):0;
+    listEl.innerHTML+=`<div class="dash-user-row" onclick="viewUserDetail('${op.id}','${esc(op.display_name)}')">
+      <div class="user-avatar">${op.display_name?.charAt(0)||'👤'}</div>
+      <div class="user-info">
+        <div class="user-name">${esc(op.display_name||op.id.slice(0,8))}</div>
+        <div class="user-stats">${done}/${total} · ${today}</div>
+        <div class="user-detail-bar"><div style="height:100%;width:${opPct}%;background:var(--primary);border-radius:3px"></div></div>
+      </div>
+      <div class="user-pct">${opPct}%</div>
+    </div>`;
+  });
+}
+
+// ========== 列表操作 ==========
+async function addItem(modId){
+  const v=$('#addInput_'+modId).value.trim();if(!v) return;
+  const bEl=$('#addBadge_'+modId);
+  const b=bEl?bEl.value:'pending';
+  await supabase.from('items').insert({module_id:modId,user_id:currentUser.id,title:v,note:'',badge:b,date:TD()});
+  $('#addInput_'+modId).value='';
+  const mod=modulesCache.find(m=>m.id===modId);
+  loadListData(mod);
+}
+
+async function cycleBadge(modId,itemId){
+  const mod=modulesCache.find(m=>m.id===modId);
+  const cycles=mod.badge_cycle.split(',');
+  // 先获取当前 badge
+  const {data:item}=await supabase.from('items').select('badge').eq('id',itemId).single();
+  if(!item) return;
+  const cur=cycles.indexOf(item.badge);
+  const next=cycles[(cur+1)%cycles.length];
+  await supabase.from('items').update({badge:next,updated_at:new Date().toISOString()}).eq('id',itemId);
+  loadListData(mod);
+}
+
+async function editItem(itemId){
+  const {data:item}=await supabase.from('items').select('*').eq('id',itemId).single();
+  if(!item) return;
+  const newT=prompt('编辑条目：',item.title);
+  if(newT!==null&&newT.trim()){
+    const newN=prompt('备注：',item.note||'');
+    await supabase.from('items').update({title:newT.trim(),note:newN||'',updated_at:new Date().toISOString()}).eq('id',itemId);
+    const mod=modulesCache.find(m=>m.id===item.module_id);
+    if(mod) loadListData(mod);
+  }
+}
+
+async function delItem(itemId,modId){
+  if(!confirm('删除此条目？')) return;
+  await supabase.from('items').delete().eq('id',itemId);
+  const mod=modulesCache.find(m=>m.id===modId);
+  if(mod) loadListData(mod);
+}
+
+// ========== 文本型模块 ==========
+function renderTextModule(mod){
+  return `<section class="module" id="mod_${mod.id}">
+    <div class="card">
+      <div class="card-title"><span class="emoji">${mod.icon}</span>${esc(mod.name)}</div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:13px;font-weight:600;color:var(--primary);display:block;margin-bottom:6px">✅ 做得好的</label>
+        <textarea class="textarea" id="textGood_${mod.id}" placeholder="哪些事情做得好？" style="min-height:80px" oninput="saveText('${mod.id}')"></textarea>
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:13px;font-weight:600;color:var(--orange);display:block;margin-bottom:6px">🔧 要改进的</label>
+        <textarea class="textarea" id="textBad_${mod.id}" placeholder="哪些地方需要改进？" style="min-height:80px" oninput="saveText('${mod.id}')"></textarea>
+      </div>
+      <div>
+        <label style="font-size:13px;font-weight:600;color:var(--red);display:block;margin-bottom:6px">🎯 下周重点</label>
+        <textarea class="textarea" id="textFocus_${mod.id}" placeholder="下周最重要的事" style="min-height:80px" oninput="saveText('${mod.id}')"></textarea>
+      </div>
+    </div>
+  </section>`;
+}
+
+async function loadTextData(mod){
+  const {data:tc}=await supabase.from('text_content').select('*').eq('module_id',mod.id).eq('user_id',currentUser.id).maybeSingle();
+  if(tc){
+    $('#textGood_'+mod.id).value=tc.good||'';
+    $('#textBad_'+mod.id).value=tc.bad||'';
+    $('#textFocus_'+mod.id).value=tc.focus||'';
+    // 保存 tc id 用于更新
+    window['_tcId_'+mod.id]=tc.id;
+  }else{
+    // 创建空记录
+    const {data:newTc}=await supabase.from('text_content').insert({module_id:mod.id,user_id:currentUser.id,good:'',bad:'',focus:''}).select().single();
+    if(newTc) window['_tcId_'+mod.id]=newTc.id;
+  }
+}
+
+async function saveText(modId){
+  const good=$('#textGood_'+modId)?.value||'';
+  const bad=$('#textBad_'+modId)?.value||'';
+  const focus=$('#textFocus_'+modId)?.value||'';
+  const tcId=window['_tcId_'+modId];
+  if(tcId){
+    await supabase.from('text_content').update({good,bad,focus,updated_at:new Date().toISOString()}).eq('id',tcId);
+  }else{
+    const {data:newTc}=await supabase.from('text_content').insert({module_id:modId,user_id:currentUser.id,good,bad,focus}).select().single();
+    if(newTc) window['_tcId_'+modId]=newTc.id;
+  }
+}
+
+// ========== 首次加载预设条目 ==========
+async function initDailyItems(){
+  const dailyMod=modulesCache.find(m=>m.name==='运营每日工作');
+  const checkMod=modulesCache.find(m=>m.name==='新品上架检查表');
+  if(!dailyMod) return;
+
+  // 检查是否已有今日数据
+  const today=TD();
+  const {data:existing}=await supabase.from('items').select('id').eq('module_id',dailyMod.id).eq('user_id',currentUser.id).eq('date',today);
+  if(existing&&existing.length>0) return; // 已有数据，不重复插入
+
+  // 插入默认条目
+  const defaultDaily=[
+    {t:'找品上品（一天3款或公司产品）',n:'',b:'pending'},
+    {t:'查看昨日核心数据',n:'曝光/点击/转化/退款/差评',b:'pending'},
+    {t:'检查店铺健康分 & 违规提醒',n:'侵权/图片/标题/属性/延迟发货',b:'pending'},
+    {t:'查看官方活动 & 报名',n:'频道活动/秒杀/Flash Sale',b:'pending'},
+    {t:'检查库存（少于4天催发货）',n:'',b:'pending'},
+    {t:'查看质量工单 & 及时修改',n:'',b:'pending'},
+    {t:'处理差评（申诉/记录/反馈工厂）',n:'高差评率做表找原因',b:'pending'},
+    {t:'检查流量下滑商品',n:'',b:'pending'},
+    {t:'检查缺货/断码商品',n:'',b:'pending'},
+    {t:'新品上架后报名营销打折',n:'',b:'pending'},
+    {t:'看市面爆款 & 找爆品',n:'',b:'pending'}
+  ];
+  await supabase.from('items').insert(defaultDaily.map(d=>({...d,module_id:dailyMod.id,user_id:currentUser.id,date:today})));
+
+  if(checkMod){
+    const {data:checkExisting}=await supabase.from('items').select('id').eq('module_id',checkMod.id).eq('user_id',currentUser.id).eq('date',today);
+    if(!checkExisting||checkExisting.length===0){
+      const defaultCheck=[
+        {t:'产品与实物一致性对比',n:'确保描述与实物匹配',b:'unchecked'},
+        {t:'图片高清 + 主图展示产品',n:'优先用长图',b:'unchecked'},
+        {t:'尺寸重量填写准确',n:'重量可少填10%',b:'unchecked'},
+        {t:'证书完整且一致',n:'',b:'unchecked'},
+        {t:'实拍图（有实物就实拍）',n:'',b:'unchecked'},
+        {t:'说明书填写正确',n:'',b:'unchecked'},
+        {t:'店小秘参数准确',n:'',b:'unchecked'},
+        {t:'上架违规词检查',n:'逐图检查安全词',b:'unchecked'},
+        {t:'待上架证书和实拍图审核',n:'确认通过后再上架',b:'unchecked'}
+      ];
+      await supabase.from('items').insert(defaultCheck.map(d=>({...d,module_id:checkMod.id,user_id:currentUser.id,date:today})));
+    }
+  }
+}
+
+// ========== 启动流程 ==========
+supabase?.auth.onAuthStateChange(async(event,session)=>{
+  if(session?.user){
+    currentUser=session.user;
+    await loadProfile();
+    enterApp();
+    await initDailyItems(); // 首次加载预设条目
+  }else{
+    currentUser=null;
+    $('#loginPage').style.display='flex';
+    $('#mainApp').style.display='none';
+  }
+});
+
+// 检查是否已有登录态
+(async()=>{
+  if(!supabase) return;
+  const {data:{session}}=await supabase.auth.getSession();
+  if(session?.user){
+    currentUser=session.user;
+    await loadProfile();
+    enterApp();
+    await initDailyItems();
+  }
+})();
 </script>
 </body>
 </html>
