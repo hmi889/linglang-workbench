@@ -1098,12 +1098,14 @@ function renderManagerChecklist(mod, allItems, ops){
   $('#ckProg_'+mod.id).style.width=pct+'%';
   $('#ckProgLabel_'+mod.id).textContent=`团队检查进度：${pct}%`;
 
+  // 顶部：团队进度汇总
+  let html='<div class="card-sub" style="margin-bottom:12px;font-weight:600">👥 团队进度</div>';
   ops.forEach(op=>{
     const myItems=allItems.filter(i=>i.user_id===op.id);
     const myChecked=myItems.filter(i=>i.badge==='checked').length;
     const myTotal=myItems.length;
     const myPct=myTotal?Math.round(myChecked/myTotal*100):0;
-    listEl.innerHTML+=`<div class="dash-user-row" onclick="viewUserDetail('${op.id}','${esc(op.display_name)}')">
+    html+=`<div class="dash-user-row">
       <div class="user-avatar">${op.display_name?.charAt(0)||'👤'}</div>
       <div class="user-info">
         <div class="user-name">${esc(op.display_name||op.id.slice(0,8))}</div>
@@ -1113,6 +1115,23 @@ function renderManagerChecklist(mod, allItems, ops){
       <div class="user-pct">${myPct}%</div>
     </div>`;
   });
+
+  // 下方：每个运营的检查条目详情
+  html+='<div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px"><div class="card-sub" style="font-weight:600">📝 详细内容</div></div>';
+  ops.forEach(op=>{
+    const myItems=allItems.filter(i=>i.user_id===op.id);
+    if(myItems.length===0) return;
+    html+=`<div style="margin-top:16px"><text class="section-title">${op.display_name?.charAt(0)||'👤'} ${esc(op.display_name||op.id.slice(0,8))}</text></div>`;
+    myItems.forEach(it=>{
+      const isC=it.badge==='checked';
+      html+=`<div class="check-item${isC?' checked':''}" style="margin-bottom:6px">
+        <div class="check-box${isC?' done':''}">${isC?'✓':''}</div>
+        <div class="ci-body"><div class="ci-title">${esc(it.title)}</div>${it.note?`<div class="ci-note">${esc(it.note)}</div>`:''}</div>
+      </div>`;
+    });
+  });
+
+  listEl.innerHTML=html;
 }
 
 // ========== 渲染运营列表（普通/daily） ==========
@@ -1155,6 +1174,7 @@ function renderOperatorList(mod,items,cycles,labels,today,rule){
 
 function renderManagerList(mod,allItems,ops,cycles,labels,today){
   const listEl=$('#listItems_'+mod.id);
+  const rule=mod.module_rule||'normal';
   const totalAll=allItems.length;
   const doneIdx=cycles.indexOf('done')>=0?cycles.indexOf('done'):cycles.length-1;
   const totalDone=allItems.filter(i=>i.badge===cycles[doneIdx]).length;
@@ -1165,13 +1185,14 @@ function renderManagerList(mod,allItems,ops,cycles,labels,today){
   $('#listProg_'+mod.id).style.width=pct+'%';
   $('#listProgLabel_'+mod.id).textContent=`团队完成进度：${pct}%（${totalDone}/${totalAll}）`;
 
-  listEl.innerHTML='';
+  // 顶部：团队进度汇总
+  let html='<div class="card-sub" style="margin-bottom:12px;font-weight:600">👥 团队进度</div>';
   ops.forEach(op=>{
     const myItems=allItems.filter(i=>i.user_id===op.id);
     const done=myItems.filter(i=>i.badge===cycles[doneIdx]).length;
     const total=myItems.length;
     const opPct=total?Math.round(done/total*100):0;
-    listEl.innerHTML+=`<div class="dash-user-row" onclick="viewUserDetail('${op.id}','${esc(op.display_name)}')">
+    html+=`<div class="dash-user-row">
       <div class="user-avatar">${op.display_name?.charAt(0)||'👤'}</div>
       <div class="user-info">
         <div class="user-name">${esc(op.display_name||op.id.slice(0,8))}</div>
@@ -1181,6 +1202,29 @@ function renderManagerList(mod,allItems,ops,cycles,labels,today){
       <div class="user-pct">${opPct}%</div>
     </div>`;
   });
+
+  // 下方：每个运营的条目详情
+  html+='<div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px"><div class="card-sub" style="font-weight:600">📝 详细内容</div></div>';
+  ops.forEach(op=>{
+    const myItems=allItems.filter(i=>i.user_id===op.id);
+    if(myItems.length===0) return;
+    html+=`<div style="margin-top:16px"><text class="section-title">${op.display_name?.charAt(0)||'👤'} ${esc(op.display_name||op.id.slice(0,8))}</text></div>`;
+    myItems.forEach(it=>{
+      const bc=badgeClassMap[it.badge]||'badge-pending';
+      const bt=labels[cycles.indexOf(it.badge)]||it.badge;
+      const ti=thumbIcons[it.badge]||mod.icon;
+      const isDone=it.badge===doneIdx?true:false;
+      html+=`<div class="li" style="${isDone?'opacity:.7':''}">
+        <div class="thumb">${ti}</div>
+        <div class="meta"><div class="name" style="${isDone?'text-decoration:line-through;color:var(--muted)':''}">${esc(it.title)}${it.is_seed?'':' <span style="font-size:11px;color:var(--blue)">自定义</span>'}</div>
+        ${it.note?`<div class="desc">${esc(it.note)}</div>`:''}
+        <div class="badges"><span class="badge ${bc}">${esc(bt)}</span></div>
+      </div>
+      </div>`;
+    });
+  });
+
+  listEl.innerHTML=html;
 }
 
 // ========== 列表操作 ==========
