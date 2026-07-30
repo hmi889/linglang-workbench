@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#4a7c59">
+<title>凌琅科技工作台</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --primary:#4a7c59;--primary-dk:#3a6347;--light:#7ab88a;--pale:#d4e2cf;
+  --cream:#f5f2e8;--card:#fff;--text:#2c3e2d;--muted:#7a8a7a;
+  --border:#e2dfd4;--shadow:0 2px 10px rgba(0,0,0,.05);
+  --red:#e74c3c;--orange:#f39c12;--blue:#3b82f6;
+}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue","Microsoft YaHei",sans-serif;background:var(--cream);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+.app{display:flex;min-height:100vh}
+
+/* ========== 侧边栏 ========== */
+.sidebar{
+  width:220px;background:var(--pale);position:fixed;top:0;left:0;height:100vh;
+  display:flex;flex-direction:column;padding:18px 0 14px;z-index:80;transition:left .3s;
+}
+.sb-hd{text-align:center;padding:6px 16px 16px;border-bottom:1px solid rgba(0,0,0,.06);margin-bottom:10px}
+.sb-hd .emoji{font-size:28px}
+.sb-hd .title{font-size:15px;font-weight:700;margin-top:2px;letter-spacing:.5px}
+.sb-hd .sub{font-size:11px;color:var(--muted);margin-top:2px}
+.menu{flex:1;padding:0 12px;overflow-y:auto}
+.mi{display:flex;flex-direction:column;align-items:center;padding:10px 6px;margin-bottom:4px;border-radius:12px;cursor:pointer;transition:.2s;user-select:none}
+.mi:hover{background:rgba(255,255,255,.45)}
+.mi.active{background:var(--light);color:#fff;box-shadow:0 2px 6px rgba(74,124,89,.2)}
+.mi.active .label{color:#fff}
+.mi .icon{font-size:22px;margin-bottom:3px}
+.mi .label{font-size:12px;font-weight:500}
+
+/* ========== 移动顶栏 ========== */
+.mobile-hd{display:none;position:sticky;top:0;z-index:70;background:var(--pale);padding:10px 14px;align-items:center;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.hamburger{background:none;border:none;font-size:22px;cursor:pointer;padding:4px 8px;color:var(--text)}
+.m-title{flex:1;text-align:center;font-weight:600;font-size:15px}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:75}
+.overlay.show{display:block}
+
+/* ========== 主内容 ========== */
+.content{flex:1;margin-left:220px;padding:24px 32px;max-width:780px;min-height:100vh}
+.module{display:none;animation:fadeUp .3s}
+.module.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ========== 卡片 ========== */
+.card{background:var(--card);border-radius:18px;padding:18px 20px;margin-bottom:16px;box-shadow:var(--shadow)}
+.card-title{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:600;margin-bottom:14px}
+.card-title .emoji{font-size:18px}
+.card-sub{font-size:12px;color:var(--muted);margin-bottom:12px}
+
+/* ========== 通用组件 ========== */
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{border:none;border-radius:12px;padding:10px 16px;font-size:14px;font-weight:500;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-family:inherit}
+.btn-p{background:var(--primary);color:#fff}
+.btn-p:hover{background:var(--primary-dk)}
+.btn-g{background:#f0ede4;color:var(--text)}
+.btn-g:hover{background:#e6e2d6}
+.btn-r{background:#fee2e2;color:var(--red)}
+.btn-r:hover{background:#fecaca}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:8px}
+.input{padding:10px 14px;border:1px solid var(--border);border-radius:12px;font-size:14px;font-family:inherit;background:#fff;width:100%}
+.input:focus{outline:none;border-color:var(--primary)}
+.textarea{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:12px;font-size:14px;font-family:inherit;background:#fff;resize:vertical;min-height:64px}
+.textarea:focus{outline:none;border-color:var(--primary)}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:500}
+.badge-pending{background:#fef3c7;color:#92400e}
+.badge-progress{background:#dbeafe;color:#1e40af}
+.badge-done{background:#d1fae5;color:#065f46}
+.badge-unchecked{background:#f3f4f6;color:#4b5563}
+.badge-checked{background:#d1fae5;color:#065f46}
+.badge-issue{background:#fee2e2;color:#991b1b}
+.empty{text-align:center;padding:28px 12px;color:var(--muted);font-size:13px}
+
+/* ========== 列表 ========== */
+.list{display:flex;flex-direction:column;gap:10px}
+.li{display:flex;align-items:center;gap:12px;padding:12px;background:#fafaf3;border-radius:12px;transition:.15s}
+.li:hover{background:#f0ede4}
+.li .thumb{width:54px;height:54px;border-radius:10px;background:var(--pale);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.li .meta{flex:1;min-width:0}
+.li .name{font-size:14px;font-weight:500}
+.li .desc{font-size:12px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.li .badges{display:flex;gap:6px;margin-top:4px}
+.li .ops{display:flex;gap:4px;flex-shrink:0}
+.icon-btn{background:none;border:none;cursor:pointer;font-size:16px;padding:6px;border-radius:8px;transition:.2s;color:var(--muted)}
+.icon-btn:hover{background:rgba(0,0,0,.06);color:var(--text)}
+.icon-btn.del{color:var(--red)}
+.icon-btn.del:hover{background:#fee2e2}
+
+/* ========== 进度条 ========== */
+.progress-bar{height:8px;background:#f0ede4;border-radius:4px;margin:10px 0;overflow:hidden}
+.progress-bar .fill{height:100%;background:var(--primary);border-radius:4px;transition:width .4s}
+
+/* ========== 统计卡片 ========== */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.stat{background:#fafaf3;border-radius:12px;padding:14px;text-align:center}
+.stat .num{font-size:24px;font-weight:700;color:var(--primary)}
+.stat .label{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* ========== 设置 ========== */
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.setting-row:last-child{border-bottom:none}
+.setting-row .label{font-size:14px}
+.toggle{position:relative;width:46px;height:26px;background:#d4d4cc;border-radius:13px;cursor:pointer;transition:.2s}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.2s}
+.toggle.on{background:var(--primary)}
+.toggle.on::after{left:23px}
+
+/* ========== 模块管理 ========== */
+.mod-card{background:#fafaf3;border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.mod-card .mod-icon{font-size:20px;width:32px;text-align:center}
+.mod-card .mod-info{flex:1;min-width:0}
+.mod-card .mod-name{font-size:14px;font-weight:500}
+.mod-card .mod-type{font-size:11px;color:var(--muted)}
+.mod-card .mod-actions{display:flex;gap:4px}
+
+/* ========== 移动端 ========== */
+@media(max-width:768px){
+  .mobile-hd{display:flex}
+  .sidebar{left:-100%;padding-top:64px;box-shadow:4px 0 20px rgba(0,0,0,.1)}
+  .sidebar.open{left:0}
+  .content{margin-left:0;padding:16px 14px}
+  .stats{grid-template-columns:1fr 1fr}
+}
+@media(min-width:769px){.overlay{display:none!important}}
+</style>
+</head>
+<body>
+
+<div class="mobile-hd">
+  <button class="hamburger" onclick="toggleSidebar()">☰</button>
+  <div class="m-title" id="mTitle"></div>
+  <div style="width:36px"></div>
+</div>
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<div class="app">
+<aside class="sidebar" id="sidebar">
+  <div class="sb-hd" id="sbHd"></div>
+  <nav class="menu" id="menu"></nav>
+</aside>
+
+<main class="content" id="contentArea">
+<!-- 所有模块内容由 JS 动态生成 -->
+</main>
+</div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+const SKEY='linglang_workbench_v1';
+let S; try{S=JSON.parse(localStorage.getItem(SKEY))||{};}catch(e){S={}}
+const TD=()=>new Date().toISOString().slice(0,10);
+const esc=s=>(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const save=()=>localStorage.setItem(SKEY,JSON.stringify(S));
+const uid=()=>'m'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+
+// ========== 默认配置（首次加载） ==========
+const DEFAULT={
+  meta:{title:'凌琅科技工作台',subtitle:'LingLang Tech Dashboard',emoji:'🏢',primary:'#4a7c59',primaryDk:'#3a6347',pale:'#d4e2cf',cream:'#f5f2e8'},
+  activeId:'daily',
+  modules:[
+    {id:'plan',icon:'📅',name:'今日计划',type:'list',badgeCycle:'pending,progress,done',badgeLabels:'待处理,进行中,已完成',items:[]},
+    {id:'daily',icon:'🛍️',name:'运营每日工作',type:'list',badgeCycle:'pending,progress,done',badgeLabels:'待处理,进行中,已完成',items:[
+      {t:'找品上品（一天3款或公司产品）',n:'',b:'pending',d:''},
+      {t:'查看昨日核心数据',n:'曝光/点击/转化/退款/差评',b:'pending',d:''},
+      {t:'检查店铺健康分 & 违规提醒',n:'侵权/图片/标题/属性/延迟发货',b:'pending',d:''},
+      {t:'查看官方活动 & 报名',n:'频道活动/秒杀/Flash Sale',b:'pending',d:''},
+      {t:'检查库存（少于4天催发货）',n:'',b:'pending',d:''},
+      {t:'查看质量工单 & 及时修改',n:'',b:'pending',d:''},
+      {t:'处理差评（申诉/记录/反馈工厂）',n:'高差评率做表找原因',b:'pending',d:''},
+      {t:'检查流量下滑商品',n:'',b:'pending',d:''},
+      {t:'检查缺货/断码商品',n:'',b:'pending',d:''},
+      {t:'新品上架后报名营销打折',n:'',b:'pending',d:''},
+      {t:'看市面爆款 & 找爆品',n:'',b:'pending',d:''}
+    ]},
+    {id:'check',icon:'📋',name:'新品上架检查表',type:'list',badgeCycle:'unchecked,checked,issue',badgeLabels:'未检查,已检查,有问题',items:[
+      {t:'产品与实物一致性对比',n:'确保描述与实物匹配',b:'unchecked',d:''},
+      {t:'图片高清 + 主图展示产品',n:'优先用长图，前面图片以解决痛点为主',b:'unchecked',d:''},
+      {t:'尺寸重量填写准确',n:'重量可少填10%',b:'unchecked',d:''},
+      {t:'证书完整且一致',n:'',b:'unchecked',d:''},
+      {t:'实拍图（有实物就实拍）',n:'',b:'unchecked',d:''},
+      {t:'说明书填写正确',n:'',b:'unchecked',d:''},
+      {t:'店小秘参数准确',n:'',b:'unchecked',d:''},
+      {t:'上架违规词检查',n:'逐图检查安全词',b:'unchecked',d:''},
+      {t:'待上架证书和实拍图审核',n:'确认通过后再上架',b:'unchecked',d:''}
+    ]},
+    {id:'review',icon:'📊',name:'每周复盘',type:'text',badgeCycle:'',badgeLabels:'',textContent:{good:'',bad:'',focus:''}},
+    {id:'settings',icon:'⚙️',name:'设置',type:'settings',badgeCycle:'',badgeLabels:'',items:[]}
+  ]
+};
+
+// 首次初始化
+const INIT_KEY='linglang_initialized_v1';
+if(!localStorage.getItem(INIT_KEY)){
+  // 给预填数据加日期
+  DEFAULT.modules.forEach(m=>{
+    if(m.items) m.items.forEach(it=>{ if(!it.d) it.d=TD(); });
+  });
+  Object.assign(S,DEFAULT);
+  save();
+  localStorage.setItem(INIT_KEY,'1');
+}
+
+// 确保 S 有完整结构
+if(!S.meta) S.meta=DEFAULT.meta;
+if(!S.modules) S.modules=DEFAULT.modules;
+if(!S.activeId) S.activeId=DEFAULT.activeId;
+save();
+
+// ========== 应用主题色 ==========
+function applyTheme(){
+  const m=S.meta;
+  document.documentElement.style.setProperty('--primary',m.primary||'#4a7c59');
+  document.documentElement.style.setProperty('--primary-dk',m.primaryDk||'#3a6347');
+  document.documentElement.style.setProperty('--pale',m.pale||'#d4e2cf');
+  document.documentElement.style.setProperty('--cream',m.cream||'#f5f2e8');
+  document.querySelector('meta[name="theme-color"]').content=m.primary||'#4a7c59';
+  document.title=m.emoji+' '+m.title;
+}
+
+// ========== 侧边栏渲染 ==========
+function renderSidebar(){
+  const m=S.meta;
+  $('#sbHd').innerHTML=`<div class="emoji">${esc(m.emoji)}</div><div class="title">${esc(m.title)}</div><div class="sub">${esc(m.subtitle)}</div>`;
+  const menu=$('#menu');
+  menu.innerHTML='';
+  S.modules.forEach(mod=>{
+    if(mod.type==='settings'){
+      menu.innerHTML+=`<div class="mi${S.activeId===mod.id?' active':''}" data-mid="${mod.id}"><span class="icon">${mod.icon}</span><span class="label">${esc(mod.name)}</span></div>`;
+    }else{
+      menu.innerHTML+=`<div class="mi${S.activeId===mod.id?' active':''}" data-mid="${mod.id}"><span class="icon">${mod.icon}</span><span class="label">${esc(mod.name)}</span></div>`;
+    }
+  });
+  // 绑定点击
+  $$('.mi').forEach(it=>{
+    it.addEventListener('click',()=>{
+      $$('.mi').forEach(i=>i.classList.remove('active'));
+      $$('.module').forEach(m=>m.classList.remove('active'));
+      it.classList.add('active');
+      S.activeId=it.dataset.mid; save();
+      const target=$('#mod_'+it.dataset.mid);
+      if(target) target.classList.add('active');
+      $('#mTitle').textContent=it.querySelector('.icon').textContent+' '+it.querySelector('.label').textContent;
+      if(window.innerWidth<=768) toggleSidebar();
+      location.hash=it.dataset.mid;
+    });
+  });
+  // 更新移动顶栏
+  const activeMod=S.modules.find(m=>m.id===S.activeId)||S.modules[0];
+  $('#mTitle').textContent=(activeMod?activeMod.icon:'')+' '+esc(activeMod?activeMod.name:'');
+}
+
+// ========== 内容区渲染 ==========
+function renderContent(){
+  const area=$('#contentArea');
+  area.innerHTML='';
+  S.modules.forEach(mod=>{
+    if(mod.type==='settings'){
+      area.innerHTML+=renderSettingsModule(mod);
+    }else if(mod.type==='text'){
+      area.innerHTML+=renderTextModule(mod);
+    }else{
+      area.innerHTML+=renderListModule(mod);
+    }
+  });
+  // 激活当前模块
+  const target=$('#mod_'+S.activeId);
+  if(target) target.classList.add('active');
+}
+
+// ========== 列表型模块 ==========
+function renderListModule(mod){
+  const cycles=mod.badgeCycle?mod.badgeCycle.split(','):['pending','progress','done'];
+  const labels=mod.badgeLabels?mod.badgeLabels.split(','):cycles;
+  const items=mod.items||[];
+  const hasStats=cycles.length===3;
+  let statsHtml='';
+  if(hasStats){
+    const counts=cycles.map(c=>items.filter(i=>i.b===c).length);
+    const total=items.length;
+    // 找出"完成"类的badge（最后一个或名为"已完成/已检查"的）
+    const doneIdx=cycles.length-1;
+    const pct=total?Math.round(counts[doneIdx]/total*100):0;
+    statsHtml=`<div class="stats">${counts.map((c,i)=>`<div class="stat"><div class="num" style="${i===doneIdx?'color:var(--primary)':i===1?'color:var(--blue)':''}">${c}</div><div class="label">${esc(labels[i])}</div></div>`).join('')}</div>
+    <div class="progress-bar"><div class="fill" id="prog_${mod.id}" style="width:${pct}%"></div></div>
+    <div class="card-sub" id="progLabel_${mod.id}">完成进度：${pct}%（${counts[doneIdx]}/${total}）</div>`;
+  }
+  const badgeClassMap={
+    'pending':'badge-pending','progress':'badge-progress','done':'badge-done',
+    'unchecked':'badge-unchecked','checked':'badge-checked','issue':'badge-issue'
+  };
+  const thumbIconMap={
+    'pending':'📅','progress':'🔄','done':'✅',
+    'unchecked':'📋','checked':'✅','issue':'⚠️'
+  };
+
+  let listHtml='';
+  if(items.length===0){
+    listHtml='<div class="empty">还没有条目，点击添加 ✏️</div>';
+  }else{
+    items.forEach((it,i)=>{
+      const bc=badgeClassMap[it.b]||'badge-pending';
+      const bt=labels[cycles.indexOf(it.b)]||it.b;
+      const thumbI=thumbIconMap[it.b]||mod.icon;
+      const isDone=it.b==='done'||it.b==='checked';
+      const isIssue=it.b==='issue';
+      const liStyle=isDone?'opacity:.7':isIssue?'background:#fef2f2':'';
+      const nameStyle=isDone?'text-decoration:line-through;color:var(--muted)':'';
+      listHtml+=`<div class="li" style="${liStyle}">
+        <div class="thumb" style="cursor:pointer" onclick="cycleBadge('${mod.id}',${i})">${thumbI}</div>
+        <div class="meta">
+          <div class="name" style="${nameStyle}">${esc(it.t)}</div>
+          ${it.n?`<div class="desc">${esc(it.n)}</div>`:''}
+          <div class="badges"><span class="badge ${bc}">${esc(bt)}</span><span style="font-size:11px;color:var(--muted)">${it.d||''}</span></div>
+        </div>
+        <div class="ops">
+          <button class="icon-btn" onclick="editItem('${mod.id}',${i})">✏️</button>
+          <button class="icon-btn del" onclick="delItem('${mod.id}',${i})">🗑</button>
+        </div>
+      </div>`;
+    });
+  }
+
+  const selOptions=cycles.map((c,i)=>`<option value="${c}">${esc(labels[i])}</option>`).join('');
+
+  return `<section class="module" id="mod_${mod.id}">
+  <div class="card">
+    <div class="card-title"><span class="emoji">${mod.icon}</span>${esc(mod.name)} <span class="badge badge-pending" id="dateBadge_${mod.id}" style="margin-left:auto;font-weight:normal">${TD()}</span></div>
+    ${mod.badgeCycle?`<div class="row" style="margin-bottom:12px">
+      <input class="input" id="input_${mod.id}" placeholder="添加条目…" style="flex:1" onkeydown="if(event.key==='Enter')addItem('${mod.id}')">
+      <select class="input" id="selBadge_${mod.id}" style="flex:0 0 100px;font-size:13px">${selOptions}</select>
+      <button class="btn btn-p" onclick="addItem('${mod.id}')">添加</button>
+    </div>`:`<div class="row" style="margin-bottom:12px">
+      <input class="input" id="input_${mod.id}" placeholder="添加条目…" style="flex:1" onkeydown="if(event.key==='Enter')addItem('${mod.id}')">
+      <button class="btn btn-p" onclick="addItem('${mod.id}')">添加</button>
+    </div>`}
+    ${statsHtml}
+    <div class="list" id="list_${mod.id}">${listHtml}</div>
+  </div>
+</section>`;
+}
+
+// ========== 文本型模块 ==========
+function renderTextModule(mod){
+  const tc=mod.textContent||{good:'',bad:'',focus:''};
+  return `<section class="module" id="mod_${mod.id}">
+  <div class="card">
+    <div class="card-title"><span class="emoji">${mod.icon}</span>${esc(mod.name)} <span class="badge badge-pending" id="weekRange_${mod.id}" style="margin-left:auto;font-weight:normal"></span></div>
+    <div style="margin-bottom:12px">
+      <label style="font-size:13px;font-weight:600;color:var(--primary);display:block;margin-bottom:6px">✅ 做得好的</label>
+      <textarea class="textarea" id="textGood_${mod.id}" placeholder="哪些事情做得好？…" style="min-height:80px" oninput="saveText('${mod.id}')">${esc(tc.good)}</textarea>
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="font-size:13px;font-weight:600;color:var(--orange);display:block;margin-bottom:6px">🔧 要改进的</label>
+      <textarea class="textarea" id="textBad_${mod.id}" placeholder="哪些地方需要改进？…" style="min-height:80px" oninput="saveText('${mod.id}')">${esc(tc.bad)}</textarea>
+    </div>
+    <div>
+      <label style="font-size:13px;font-weight:600;color:var(--red);display:block;margin-bottom:6px">🎯 下周重点</label>
+      <textarea class="textarea" id="textFocus_${mod.id}" placeholder="下周最重要的事…" style="min-height:80px" oninput="saveText('${mod.id}')">${esc(tc.focus)}</textarea>
+    </div>
+  </div>
+</section>`;
+}
+
+// ========== 设置模块 ==========
+function renderSettingsModule(mod){
+  const m=S.meta;
+  let modListHtml='';
+  S.modules.forEach((md,i)=>{
+    if(md.type==='settings') return;
+    const typeLabel={list:'列表',text:'文本',checkin:'打卡'}[md.type]||md.type;
+    modListHtml+=`<div class="mod-card">
+      <div class="mod-icon">${md.icon}</div>
+      <div class="mod-info">
+        <div class="mod-name">${esc(md.name)}</div>
+        <div class="mod-type">${typeLabel} · 徽章: ${esc(md.badgeLabels||'无')}</div>
+      </div>
+      <div class="mod-actions">
+        <button class="btn btn-sm btn-g" onclick="editModule('${md.id}')">✏️ 编辑</button>
+        <button class="btn btn-sm btn-r" onclick="delModule('${md.id}')">删除</button>
+      </div>
+    </div>`;
+  });
+
+  return `<section class="module" id="mod_${mod.id}">
+  <div class="card">
+    <div class="card-title"><span class="emoji">${mod.icon}</span>${esc(mod.name)}</div>
+
+    <div style="margin-bottom:20px">
+      <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:8px">🎨 基础信息</div>
+      <div class="row" style="margin-bottom:8px">
+        <label style="font-size:13px;width:70px;flex-shrink:0">标题</label>
+        <input class="input" id="setTitle" value="${esc(m.title)}" oninput="updateMeta()">
+      </div>
+      <div class="row" style="margin-bottom:8px">
+        <label style="font-size:13px;width:70px;flex-shrink:0">副标题</label>
+        <input class="input" id="setSubtitle" value="${esc(m.subtitle)}" oninput="updateMeta()">
+      </div>
+      <div class="row" style="margin-bottom:8px">
+        <label style="font-size:13px;width:70px;flex-shrink:0">Logo Emoji</label>
+        <input class="input" id="setEmoji" value="${m.emoji}" oninput="updateMeta()" style="width:60px;flex:none;text-align:center;font-size:20px">
+        <input class="input" id="setEmojiAlt" placeholder="输入任意emoji" style="flex:1;font-size:16px" oninput="if(this.value){$('#setEmoji').value=this.value.slice(0,2);updateMeta();this.value=''}">
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px">
+      <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:8px">🎨 配色方案</div>
+      <div class="row" style="margin-bottom:8px">
+        <label style="font-size:13px;width:70px;flex-shrink:0">主色</label>
+        <input type="color" id="setColorPrimary" value="${m.primary||'#4a7c59'}" oninput="updateMeta()" style="width:40px;height:36px;border:none;cursor:pointer;border-radius:8px">
+        <input class="input" id="setColorPrimaryHex" value="${m.primary||'#4a7c59'}" oninput="$('#setColorPrimary').value=this.value;updateMeta()" style="width:90px;flex:none;font-size:12px">
+      </div>
+      <div class="row" style="margin-bottom:8px">
+        <label style="font-size:13px;width:70px;flex-shrink:0">侧栏色</label>
+        <input type="color" id="setColorPale" value="${m.pale||'#d4e2cf'}" oninput="updateMeta()" style="width:40px;height:36px;border:none;cursor:pointer;border-radius:8px">
+        <input class="input" id="setColorPaleHex" value="${m.pale||'#d4e2cf'}" oninput="$('#setColorPale').value=this.value;updateMeta()" style="width:90px;flex:none;font-size:12px">
+      </div>
+      <div class="row" style="margin-bottom:8px">
+        <label style="font-size:13px;width:70px;flex-shrink:0">背景色</label>
+        <input type="color" id="setColorCream" value="${m.cream||'#f5f2e8'}" oninput="updateMeta()" style="width:40px;height:36px;border:none;cursor:pointer;border-radius:8px">
+        <input class="input" id="setColorCreamHex" value="${m.cream||'#f5f2e8'}" oninput="$('#setColorCream').value=this.value;updateMeta()" style="width:90px;flex:none;font-size:12px">
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px">
+      <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:8px">📦 模块管理</div>
+      ${modListHtml}
+      <div class="row" style="margin-top:10px">
+        <button class="btn btn-p btn-sm" onclick="addModule()">+ 添加模块</button>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px">
+      <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:8px">💾 数据管理</div>
+      <div class="row">
+        <button class="btn btn-g" onclick="exportData()">📤 导出备份</button>
+        <button class="btn btn-g" onclick="importData()">📥 导入备份</button>
+        <button class="btn btn-r" onclick="if(confirm('⚠️ 清空所有数据？此操作不可恢复！')){localStorage.removeItem(SKEY);localStorage.removeItem(INIT_KEY);location.reload()}">🗑 清空数据</button>
+      </div>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="doImport(event)">
+    </div>
+
+    <div class="card-sub" style="margin-bottom:0">数据保存在浏览器本地 · 刷新不丢失 · 所有改动实时生效</div>
+  </div>
+</section>`;
+}
+
+// ========== 列表操作 ==========
+function addItem(modId){
+  const mod=S.modules.find(m=>m.id===modId);
+  const v=$('#input_'+modId).value.trim(); if(!v) return;
+  const b=mod.badgeCycle?$('#selBadge_'+modId)?.value||mod.badgeCycle.split(',')[0]:'pending';
+  if(!mod.items) mod.items=[];
+  mod.items.push({t:v,n:'',b:b,d:TD()});
+  save(); refreshAll();
+  const inp=$('#input_'+modId); if(inp) inp.value='';
+}
+
+function cycleBadge(modId,i){
+  const mod=S.modules.find(m=>m.id===modId);
+  if(!mod||!mod.items||!mod.badgeCycle) return;
+  const cycles=mod.badgeCycle.split(',');
+  const cur=cycles.indexOf(mod.items[i].b);
+  mod.items[i].b=cycles[(cur+1)%cycles.length];
+  save(); refreshAll();
+}
+
+function editItem(modId,i){
+  const mod=S.modules.find(m=>m.id===modId);
+  const newT=prompt('编辑条目：',mod.items[i].t);
+  if(newT!==null&&newT.trim()){
+    mod.items[i].t=newT.trim();
+    const newN=prompt('备注（可留空）：',mod.items[i].n||'');
+    if(newN!==null) mod.items[i].n=newN;
+    save(); refreshAll();
+  }
+}
+
+function delItem(modId,i){
+  const mod=S.modules.find(m=>m.id===modId);
+  mod.items.splice(i,1); save(); refreshAll();
+}
+
+// ========== 文本操作 ==========
+function saveText(modId){
+  const mod=S.modules.find(m=>m.id===modId);
+  mod.textContent={
+    good:$('#textGood_'+modId)?.value||'',
+    bad:$('#textBad_'+modId)?.value||'',
+    focus:$('#textFocus_'+modId)?.value||''
+  };
+  save();
+}
+
+// ========== 设置操作 ==========
+function updateMeta(){
+  S.meta.title=$('#setTitle')?.value||S.meta.title;
+  S.meta.subtitle=$('#setSubtitle')?.value||S.meta.subtitle;
+  S.meta.emoji=$('#setEmoji')?.value||S.meta.emoji;
+  S.meta.primary=$('#setColorPrimary')?.value||S.meta.primary;
+  S.meta.primaryDk=S.meta.primary;
+  S.meta.pale=$('#setColorPale')?.value||S.meta.pale;
+  S.meta.cream=$('#setColorCream')?.value||S.meta.cream;
+  // 同步hex输入框
+  const ph=$('#setColorPrimaryHex'); if(ph) ph.value=S.meta.primary;
+  const pah=$('#setColorPaleHex'); if(pah) pah.value=S.meta.pale;
+  const ch=$('#setColorCreamHex'); if(ch) ch.value=S.meta.cream;
+  save(); refreshAll();
+}
+
+function addModule(){
+  const name=prompt('模块名称：');
+  if(!name||!name.trim()) return;
+  const icon=prompt('模块图标（输入emoji）：','📌');
+  const type=prompt('模块类型：\n1 = 列表（带徽章状态）\n2 = 文本（自由书写）','1');
+  let modType='list', badgeCycle='pending,progress,done', badgeLabels='待处理,进行中,已完成';
+  if(type==='2'){
+    modType='text'; badgeCycle=''; badgeLabels='';
+  }else{
+    const customBadges=prompt('徽章流程（逗号分隔，留空用默认）\n示例: unchecked,checked,issue\n示例: 待办,进行中,已完成','');
+    if(customBadges&&customBadges.trim()){
+      badgeCycle=customBadges.trim();
+      badgeLabels=customBadges.trim();
+    }
+  }
+  const newMod={id:uid(),icon:icon||'📌',name:name.trim(),type:modType,badgeCycle,badgeLabels,
+    items:modType==='list'?[]:undefined,
+    textContent:modType==='text'?{good:'',bad:'',focus:''}:undefined};
+  S.modules.splice(S.modules.length-1,0,newMod); // 插在设置前面
+  save(); refreshAll();
+}
+
+function editModule(modId){
+  const mod=S.modules.find(m=>m.id===modId);
+  const newName=prompt('模块名称：',mod.name);
+  if(!newName||!newName.trim()) return;
+  mod.name=newName.trim();
+  const newIcon=prompt('模块图标（输入emoji）：',mod.icon);
+  if(newIcon) mod.icon=newIcon;
+  if(mod.type==='list'){
+    const newBadges=prompt('徽章流程（逗号分隔）：',mod.badgeCycle);
+    if(newBadges&&newBadges.trim()){
+      mod.badgeCycle=newBadges.trim();
+      mod.badgeLabels=prompt('徽章中文标签（逗号分隔）：',mod.badgeLabels)||newBadges.trim();
+    }
+  }
+  save(); refreshAll();
+}
+
+function delModule(modId){
+  if(!confirm(`确认删除模块「${S.modules.find(m=>m.id===modId).name}」？\n该模块的所有数据也会被删除。`)) return;
+  S.modules=S.modules.filter(m=>m.id!==modId);
+  if(S.activeId===modId) S.activeId=S.modules[0]?.id||'plan';
+  save(); refreshAll();
+}
+
+// ========== 数据导入导出 ==========
+function exportData(){
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`linglang-backup-${TD()}.json`;
+  a.click();
+}
+
+function importData(){
+  $('#importFile').click();
+}
+
+function doImport(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const data=JSON.parse(ev.target.result);
+      Object.assign(S,data);
+      save(); refreshAll();
+      alert('✅ 导入成功！');
+    }catch(err){
+      alert('❌ 文件格式错误：'+err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ========== 侧边栏开关 ==========
+function toggleSidebar(){
+  $('#sidebar').classList.toggle('open');
+  $('#overlay').classList.toggle('show');
+}
+
+// ========== 全量刷新 ==========
+function refreshAll(){
+  applyTheme();
+  renderSidebar();
+  renderContent();
+  // 恢复文本模块的内容（渲染时已写入 textarea value）
+  // 恢复设置模块的输入值
+  // 激活当前模块
+  const target=$('#mod_'+S.activeId);
+  if(target) target.classList.add('active');
+  // 如果 hash 有值，跳转
+  if(location.hash){
+    const t=document.querySelector(`.mi[data-mid="${location.hash.slice(1)}"]`);
+    if(t) t.click();
+  }
+  // 设置周日期
+  const d=new Date(),day=d.getDay()||7;
+  const mon=new Date(d-(day-1)*864e5),sun=new Date(d+(7-day)*864e5);
+  const fmt=x=>`${x.getMonth()+1}/${x.getDate()}`;
+  S.modules.forEach(mod=>{
+    const el=$('#weekRange_'+mod.id);
+    if(el) el.textContent=`${fmt(mon)} – ${fmt(sun)}`;
+  });
+}
+
+// ========== 启动 ==========
+refreshAll();
+</script>
+</body>
+</html>
