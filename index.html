@@ -271,7 +271,7 @@ try {
   console.error('Supabase init failed:', e);
 }
 
-const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+var $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 let currentUser = null;
 let currentRole = 'operator';
 let isRegisterMode = false;
